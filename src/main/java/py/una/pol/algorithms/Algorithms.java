@@ -6,6 +6,10 @@ import org.jgrapht.alg.shortestpath.KShortestSimplePaths;
 import org.jgrapht.graph.GraphWalk;
 import py.una.pol.rest.model.*;
 import py.una.pol.utils.Utils;
+import py.una.pol.rest.model.Demand;
+import py.una.pol.rest.model.EstablisedRoute;
+import py.una.pol.rest.model.FrecuencySlot;
+import py.una.pol.rest.model.Link;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -13,7 +17,6 @@ import java.math.BigDecimal;
 import java.util.*;
 
 import static py.una.pol.utils.Utils.*;
-
 
 public class Algorithms {
     public static EstablisedRoute fa(Graph graph, List<GraphPath> kspaths, Demand demand, int capacity, int core){
