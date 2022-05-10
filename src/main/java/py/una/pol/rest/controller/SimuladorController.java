@@ -21,11 +21,12 @@ import java.lang.reflect.Method;
 import java.util.*;
 
 @RestController
+@CrossOrigin(origins = "http://localhost:4200")
 @RequestMapping("/api/v1")
 public class SimuladorController {
 
-    @PostMapping(path= "/simular", consumes = "application/json", produces = "application/json")
-    public void simular(Options options) throws Exception {
+    @PostMapping(path= "/simular")
+    public void simular(@RequestBody Options options) throws Exception {
 
         //socketClient.startConnection("127.0.0.1",9999);
         List<Demand> demands;
@@ -275,8 +276,6 @@ public class SimuladorController {
     private Graph createTopology2(String fileName, int numberOfCores, double fsWidh, int numberOffs) {
         ObjectMapper objectMapper = new ObjectMapper();
         try {
-            //Graph<Integer, Link> g = new SimpleDirectedGraph<>(Link.class);
-//            Graph<Integer, Link> g = new SimpleDirectedWeightedGraph<>(Link.class);
             Graph<Integer, Link> g = new SimpleWeightedGraph<>(Link.class);
             InputStream is = ResourceReader.getFileFromResourceAsStream(fileName);
             JsonNode object = objectMapper.readTree(is);
