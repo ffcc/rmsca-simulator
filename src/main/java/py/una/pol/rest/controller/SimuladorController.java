@@ -36,26 +36,18 @@ public class SimuladorController {
         int FSMinPC = (int) (options.getFsRangeMax() - ((options.getFsRangeMax() - options.getFsRangeMin()) * 0.3));
         FileWriter file = new FileWriter("bloqueos.csv");
         BufferedWriter writer = new BufferedWriter(file);
-        double pred = 0;
         int slotsBlocked;
         int demandsQ = 0;
         int defragsQ = 0, blocksQ = 0, defragsF = 0;
-        double ia_prob = 0.3;
-        int aco_improv = 20;
-        int antsq = 20;
-        int last_defrag_time = 0;
-        int tmin = 10;//Shortest interval between adjacent DF operations when the last failed
         int period = 100;
         boolean defragS = true;
-        String aco_def_metric = "BFR";
-        String demands_type = "Fijo";
         Map<String, Graph> defResult = new HashMap<>();
         writer.write("Entropy, Pc, Msi, Bfr, Shf, % Uso, Slots Bloqueados, Prediccion");
         writer.newLine();
 
         for (int i = 0; i < options.getTime(); i++) {
             boolean blocked = false;
-            System.out.println("Tiempo: " + (i+1) + ", Predicción: " + pred + ", Cantidad de rutas activas: " + establishedRoutes.size());
+            System.out.println("Tiempo: " + (i+1) + ", Cantidad de rutas activas: " + establishedRoutes.size());
             demands = Utils.generateDemands(
                     options.getLambda(), options.getTime(),
                     options.getFsRangeMin(), options.getFsRangeMax(),
@@ -66,24 +58,6 @@ public class SimuladorController {
             slotsBlocked = 0;
             demandsQ += demands.size();
 
-            if(pred >= ia_prob && (defragS || (i - last_defrag_time >= tmin))){
-
-                System.out.println("Bfr antes de aco: " + Algorithms.BFR(net, options.getCapacity()));
-                defResult = Algorithms.aco_def(net,establishedRoutes,antsq,aco_def_metric,FSMinPC,aco_improv,options.getRoutingAlg(),ksp,options.getCapacity(), kspList);
-
-                defragsQ++;
-                if(defResult.get("graph") == null){
-                    System.out.println("Fallo desfragmentacion Aco");
-                    defragsF++;
-                    last_defrag_time = i;
-                    defragS = false;
-                }else{
-                    net = defResult.get("graph");
-                    defragS = true;
-                }
-                System.out.println("Bfr despues de aco: " + Algorithms.BFR(net, options.getCapacity()));
-
-            }
             for(Demand demand : demands){
                 //k caminos más cortos entre source y destination de la demanda actual
                 List<GraphPath> kspaths = ksp.getPaths(demand.getSource(), demand.getDestination(), 5);
@@ -128,18 +102,10 @@ public class SimuladorController {
                         if(establisedRoute != null || demand.getBlocked())
                             break;
                     }
-                }catch (java.lang.Exception e){
-                    e.printStackTrace();
-                }
-                try {
-                    //wait = 1000/demands.size();
-                    //TimeUnit.MILLISECONDS.sleep(wait);
-                    //Object.wait (wait);
-                }catch (java.lang.Exception e){
+                }catch (java.lang.Exception e) {
                     e.printStackTrace();
                 }
             }
-            //pred = Utils.getPredIA(net, FSMinPC, options.getCapacity(), slotsBlocked, socketClient, writer, blocked);
             for(EstablisedRoute route : establishedRoutes){
                 route.subTimeLife();
             }
@@ -157,16 +123,14 @@ public class SimuladorController {
             ReleasedSlots rSlots = new ReleasedSlots();
             rSlots.setTime(i + 2);
             rSlots.setReleased(true);
-            rSlots.setReleasedSlots(this.setTimeLife(net));
+            //rSlots.setReleasedSlots(this.setTimeLife(net));
             //this.template.convertAndSend("/message", rSlots);
 
         }
         Map<String, Boolean> map = new LinkedHashMap<>();
         map.put("end", true);
-        //this.template.convertAndSend("/message",  map);
-        //socketClient.stopConnection();
         System.out.println("Desfragmentaciones en bloqueos");
-        System.out.println(options.getErlang() + " erlangs, " + ia_prob + " para desfragmentar, " + aco_improv + " de mejora, " + antsq + " hormigas" + ", tipo de demandas " + demands_type);
+        System.out.println(options.getErlang() + " erlangs ");
         System.out.println("Cantidad de demandas: " + demandsQ);
         System.out.println("Cantidad de bloqueos: " + blocksQ);
         System.out.println("Cantidad de defragmentaciones: " + defragsQ);
