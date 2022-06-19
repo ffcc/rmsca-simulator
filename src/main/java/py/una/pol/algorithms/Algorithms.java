@@ -21,7 +21,7 @@ import static py.una.pol.utils.Utils.*;
 public class Algorithms {
     public static EstablisedRoute fa(Graph graph, List<GraphPath> kspaths, Demand demand, int capacity, int core){
         int begin, count;
-        boolean  so[] = new boolean[capacity]; //Representa la ocupación del espectro de todos los enlaces.
+        boolean  so[] = new boolean[capacity]; //Representa los fs ocupados del espectro de todos los enlaces.
         List<GraphPath> kspPlaced = new ArrayList<>();
         Map<String, Integer> bestKspSlot = new HashMap<>();
         int k = 0;
@@ -29,7 +29,7 @@ public class Algorithms {
             Arrays.fill(so, false);//Se inicializa todo el espectro como libre
             GraphPath ksp = kspaths.get(k);
 
-            //Se setean los slots libres
+            //Se recorren todos los fs y se setean los slots ocupados con true
             for(int i = 0; i < capacity; i++){
                 for (Object path: ksp.getEdgeList()){
                     Link link = (Link) path;
@@ -64,6 +64,8 @@ public class Algorithms {
             }
             k++;
         }
+        System.out.println("CANTIDAD DE KSP UBICADOS: " + kspPlaced.size());
+
         if(kspPlaced.size() == 0)
             return null;
         //Ksp ubidados ahora se debe elegir el mejor

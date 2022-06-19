@@ -53,7 +53,11 @@ public class SimuladorController {
                     options.getFsRangeMin(), options.getFsRangeMax(),
                     net.vertexSet().size(), options.getErlang() / options.getLambda());
 
+            System.out.println("Cantidad de demandas: " + demands.size());
+            writer.write("cantidad de demandas: " + demands.size());
+            writer.newLine();
 
+            //se carga la red en ksp, con todos los nodos, pares de nodos
             KShortestSimplePaths ksp = new KShortestSimplePaths(net);
             slotsBlocked = 0;
             demandsQ += demands.size();
@@ -62,7 +66,7 @@ public class SimuladorController {
                 //k caminos más cortos entre source y destination de la demanda actual
                 List<GraphPath> kspaths = ksp.getPaths(demand.getSource(), demand.getDestination(), 5);
                 try {
-                    boolean [] tested = new boolean[4];
+                    boolean [] tested = new boolean[options.getCores()];
                     Arrays.fill(tested, false);
                     int core;
                     while (true){
@@ -129,7 +133,7 @@ public class SimuladorController {
         }
         Map<String, Boolean> map = new LinkedHashMap<>();
         map.put("end", true);
-        System.out.println("Desfragmentaciones en bloqueos");
+        System.out.println("Resumen general del simulador");
         System.out.println(options.getErlang() + " erlangs ");
         System.out.println("Cantidad de demandas: " + demandsQ);
         System.out.println("Cantidad de bloqueos: " + blocksQ);

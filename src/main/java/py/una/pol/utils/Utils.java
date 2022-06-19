@@ -19,6 +19,7 @@ public class Utils {
         List<Demand> demands = new ArrayList<>();
         Random rand;
         demandasQuantity = poisson(lambda);
+
         for (j = 0; j < demandasQuantity; j++) {
             rand = new Random();
             source = rand.nextInt(cantNodos);
@@ -28,6 +29,7 @@ public class Utils {
                 destination = rand.nextInt(cantNodos);
             }
             tLife = getTimeLife(HT);
+            System.out.println("Demanda { source: " + source + ", destination: " + destination + ", fs: " + fs + ", timeLife: " + tLife + "}");
             demands.add(new Demand(source, destination, fs, tLife));
         }
         return demands;
