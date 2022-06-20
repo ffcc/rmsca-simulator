@@ -5,13 +5,12 @@ public class Options {
     private String topology;
     private float fsWidth;
     private int capacity;
-    private int erlang;
-    private int lambda;
     private int fsRangeMin;
     private int fsRangeMax;
     private int cores;
     private String metricaDesfrag;
     private String routingAlg;
+    private int demandsQuantity;
 
     public int getTime() {
         return time;
@@ -43,22 +42,6 @@ public class Options {
 
     public void setCapacity(int capacity) {
         this.capacity = capacity;
-    }
-
-    public int getErlang() {
-        return erlang;
-    }
-
-    public void setErlang(int erlang) {
-        this.erlang = erlang;
-    }
-
-    public int getLambda() {
-        return lambda;
-    }
-
-    public void setLambda(int lambda) {
-        this.lambda = lambda;
     }
 
     public int getFsRangeMin() {
@@ -99,5 +82,13 @@ public class Options {
 
     public void setRoutingAlg(String routingAlg) {
         this.routingAlg = routingAlg;
+    }
+
+    public int getDemandsQuantity() {
+        return demandsQuantity;
+    }
+
+    public void setDemandsQuantity(int demandsQuantity) {
+        this.demandsQuantity = demandsQuantity;
     }
 }

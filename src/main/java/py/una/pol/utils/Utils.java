@@ -14,11 +14,10 @@ import py.una.pol.rest.model.*;
 
 public class Utils {
 
-    public static List<Demand> generateDemands(int lambda, int totalTime, int fsMin, int fsMax, int cantNodos, int HT){
-        int i, demandasQuantity, j, source, destination, fs, tLife;
+    public static List<Demand> generateDemands(int demandasQuantity, int totalTime, int fsMin, int fsMax, int cantNodos){
+        int i, j, source, destination, fs, tLife;
         List<Demand> demands = new ArrayList<>();
         Random rand;
-        demandasQuantity = poisson(lambda);
 
         for (j = 0; j < demandasQuantity; j++) {
             rand = new Random();
@@ -28,9 +27,8 @@ public class Utils {
             while (source == destination) {
                 destination = rand.nextInt(cantNodos);
             }
-            tLife = getTimeLife(HT);
-            System.out.println("Demanda { source: " + source + ", destination: " + destination + ", fs: " + fs + ", timeLife: " + tLife + "}");
-            demands.add(new Demand(source, destination, fs, tLife));
+            System.out.println("Demanda { source: " + source + ", destination: " + destination + ", fs: " + fs + " }");
+            demands.add(new Demand(source, destination, fs));
         }
         return demands;
     }
@@ -266,7 +264,6 @@ public class Utils {
         for (Object link: establisedRoute.getPath()){
             for (int i = establisedRoute.getFsIndexBegin(); i < establisedRoute.getFsIndexBegin() + establisedRoute.getFs(); i++){
                 ((Link) link).getCores().get(core).getFs().get(i).setFree(false);
-                ((Link) link).getCores().get(core).getFs().get(i).setLifetime(establisedRoute.getTimeLife());
             }
         }
     }
@@ -277,7 +274,6 @@ public class Utils {
             Link linkAux = (Link) graph.getEdge(link.getFrom(),link.getTo());
             for (int i = establisedRoute.getFsIndexBegin(); i < establisedRoute.getFsIndexBegin() + establisedRoute.getFs(); i++){
                 linkAux.getCores().get(core).getFs().get(i).setFree(true);
-                linkAux.getCores().get(core).getFs().get(i).setLifetime(0);
             }
         }
     }
@@ -331,7 +327,6 @@ public class Utils {
                 for (FrecuencySlot fs : core.getFs()){
                     FrecuencySlot fsCopy = new FrecuencySlot(core.getBandwidth()/ core.getFs().size());
                     fsCopy.setFree(fs.isFree());
-                    fsCopy.setLifetime(fs.getLifetime());
                     espectro.add(fsCopy);
                 }
                 Core copyCore = new Core(core.getBandwidth(),espectro);
@@ -346,15 +341,6 @@ public class Utils {
     }
 
     public static boolean compareRoutes(EstablisedRoute r1, EstablisedRoute r2){
-        if(r1.getTimeLife() != r2.getTimeLife() ||
-                r1.getFs() != r2.getFs() ||
-                r1.getFsIndexBegin() != r2.getFsIndexBegin() ||
-                r1.getFrom() != r2.getFrom() ||
-                r1.getTo() != r2.getTo()
-        ){
-            return false;
-        }
-
         if(r1.getPath().size() != r2.getPath().size())
             return false;
         String rs1, rs2;

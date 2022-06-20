@@ -5,7 +5,6 @@ import java.util.List;
 public class EstablisedRoute {
     private int fsIndexBegin;
     private int fs;
-    private int timeLife;
     private int from;
     private int to;
     private List<Link> path;
@@ -13,11 +12,10 @@ public class EstablisedRoute {
 
     public EstablisedRoute() {
     }
-    public EstablisedRoute(List path, int fsIndexBegin, int fs, int timeLife, int from, int to, int core) {
+    public EstablisedRoute(List path, int fsIndexBegin, int fs, int from, int to, int core) {
         this.path = path;
         this.fsIndexBegin = fsIndexBegin;
         this.fs = fs;
-        this.timeLife = timeLife;
         this.from = from;
         this.to = to;
         this.core = core;
@@ -37,14 +35,6 @@ public class EstablisedRoute {
 
     public void setFs(int fs) {
         this.fs = fs;
-    }
-
-    public int getTimeLife() {
-        return timeLife;
-    }
-
-    public void setTimeLife(int timeLife) {
-        this.timeLife = timeLife;
     }
 
     public int getFrom() {
@@ -77,9 +67,5 @@ public class EstablisedRoute {
 
     public void setCore(int core) {
         this.core = core;
-    }
-
-    public void subTimeLife(){
-        this.timeLife--;
     }
 }
