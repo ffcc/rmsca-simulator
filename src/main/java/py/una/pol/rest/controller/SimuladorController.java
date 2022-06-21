@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jgrapht.Graph;
 import org.jgrapht.GraphPath;
+import org.jgrapht.alg.shortestpath.DijkstraShortestPath;
 import org.jgrapht.alg.shortestpath.KShortestSimplePaths;
 import org.jgrapht.graph.SimpleWeightedGraph;
 import org.springframework.web.bind.annotation.*;
@@ -26,104 +27,86 @@ public class SimuladorController {
 
     @PostMapping(path= "/simular")
     public void simular(@RequestBody Options options) throws Exception {
-
-        //socketClient.startConnection("127.0.0.1",9999);
         List<Demand> demands;
         List<EstablisedRoute> establishedRoutes = new ArrayList<>();
-        Graph net = createTopology(options.getTopology(), options.getCores(), options.getFsWidth(), options.getCapacity());
+        //se crea la topoligia con los parámetros seleccionados
+        Graph<Integer, Link> net = createTopology(options.getTopology(), options.getCores(), options.getFsWidth(), options.getCapacity());
         List<List<GraphPath>> kspList = new ArrayList<>();
+        //archivo donde vamos a guardar todos los resultados
         FileWriter file = new FileWriter("bloqueos.csv");
+        String aco_def_metric = options.getMetricaDesfrag();
         BufferedWriter writer = new BufferedWriter(file);
-        int slotsBlocked;
-        int demandsQ = 0;
-        int defragsQ = 0, blocksQ = 0, defragsF = 0;
+        int slotsBlocked, demandsQ = 1, defragsQ = 0, blocksQ = 0, defragsF = 0;
         writer.write("Entropy, Pc, Msi, Bfr, Shf, % Uso, Slots Bloqueados, Prediccion");
         writer.newLine();
 
-        for (int i = 0; i < options.getTime(); i++) {
+        //se generan aleatoriamente las demandas, de acuerdo a la cantidad proporcionadas por parámetro
+        demands = Utils.generateDemands(options.getDemandsQuantity(), options.getFsRangeMin(),
+                options.getFsRangeMax(), net.vertexSet().size());
+
+        //se carga la red en ksp - dijkstra, con todos los nodos, pares de nodos
+        KShortestSimplePaths ksp = new KShortestSimplePaths(net);
+        DijkstraShortestPath<Integer, Link> djkt = new DijkstraShortestPath<>(net);
+        //colector que va a almacenar los k caminos mas cortos
+        List<GraphPath> kspaths = new ArrayList<>();
+        int core = 0;
+        slotsBlocked = 0;
+
+        for(Demand demand : demands) {
+
             boolean blocked = false;
-            System.out.println("Tiempo: " + (i+1) + ", Cantidad de rutas activas: " + establishedRoutes.size());
-            demands = Utils.generateDemands(
-                    options.getDemandsQuantity(), options.getTime(),
-                    options.getFsRangeMin(), options.getFsRangeMax(),
-                    net.vertexSet().size());
+            System.out.println("Tiempo: " + (demandsQ) + ", Cantidad de rutas activas: " + establishedRoutes.size());
 
-            System.out.println("Cantidad de demandas: " + demands.size());
-            writer.write("cantidad de demandas: " + demands.size());
+            System.out.println("Cantidad de demandas: " + demandsQ);
+            writer.write("cantidad de demandas: " + demandsQ);
             writer.newLine();
-
-            //se carga la red en ksp, con todos los nodos, pares de nodos
-            KShortestSimplePaths ksp = new KShortestSimplePaths(net);
             slotsBlocked = 0;
-            demandsQ += demands.size();
+            demandsQ++;
+            kspaths.clear();
 
-            for(Demand demand : demands){
-                //k caminos más cortos entre source y destination de la demanda actual
-                List<GraphPath> kspaths = ksp.getPaths(demand.getSource(), demand.getDestination(), 5);
-                try {
-                    boolean [] tested = new boolean[options.getCores()];
-                    Arrays.fill(tested, false);
-                    int core;
-                    while (true){
-                        core = getCore(options.getCores(), tested);
-                        Class<?>[] paramTypes = {Graph.class, List.class, Demand.class, int.class, int.class};
-                        Method method = Algorithms.class.getMethod(options.getRoutingAlg(), paramTypes);
-                        Object establisedRoute = method.invoke(this, net, kspaths, demand, options.getCapacity(), core);
-                        if(establisedRoute == null){
-                            tested[core] = true;//Se marca el core probado
-                            if(!Arrays.asList(tested).contains(false)){//Se ve si ya se probaron todos los cores
-                                //Bloqueo
-                                //System.out.println("BLOQUEO");
-                                blocked = true;
-                                //System.out.println("Va a desfragmentar con :" + establishedRoutes.size() + " rutas");
-                                ///if((defragS || (i - last_defrag_time >= tmin))){
-                                //defragS = Algorithms.aco_def(net,establishedRoutes,antsq,aco_def_metric,FSMinPC,aco_improv,options.getRoutingAlg(),ksp,options.getCapacity(), kspList);
-                                //defragsQ++;
-                                //if(!defragS){
-                                //    defragsF++;
-                                //    last_defrag_time = i;
-                                //}
-                                //}
-                                demand.setBlocked(true);
-                                //this.template.convertAndSend("/message",  demand);
-                                //break;
-                                slotsBlocked += demand.getFs();
-                                blocksQ++;
-                            }
-                        }else{
-                            //Ruta establecida
-                            establishedRoutes.add((EstablisedRoute) establisedRoute);
-                            kspList.add(kspaths);
-                            Utils.assignFs((EstablisedRoute)establisedRoute, core);
-                            //this.template.convertAndSend("/message",  establisedRoute);
-                            //break;
-                        }
-                        if(establisedRoute != null || demand.getBlocked())
-                            break;
-                    }
-                }catch (java.lang.Exception e) {
-                    e.printStackTrace();
-                }
+            //se ejecuta dijkstra - ksp como sortest-Algorithm
+            if(options.getSortestAlg().equals("Dijkstra")) {
+                //retorna el camino mas corto de fuente a destino
+                kspaths.add(djkt.getPath(demand.getSource(), demand.getDestination()));
+            } else {
+                //retorna los 5 caminos mas cortos de fuente a destino
+                kspaths = ksp.getPaths(demand.getSource(), demand.getDestination(), 5);
             }
 
-            /*
-            for (int ri = 0; ri < establishedRoutes.size(); ri++){
-                EstablisedRoute route = establishedRoutes.get(ri);
-                if(route.getTimeLife() == 0){
-                    establishedRoutes.remove(ri);
-                    kspList.remove(ri);
-                    ri--;
+            //busqueda de caminos disponibles, para establecer los enlaces
+            try {
+                //bandera para ir pintando los nucleos visitados
+                boolean[] tested = new boolean[options.getCores()];
+                Arrays.fill(tested, false);
+                while (true) {
+                    core = getCore(options.getCores(), tested);
+                    Class<?>[] paramTypes = {Graph.class, List.class, Demand.class, int.class, int.class};
+                    Method method = Algorithms.class.getMethod(options.getRoutingAlg(), paramTypes);
+                    Object establisedRoute = method.invoke(this, net, kspaths, demand, options.getCapacity(), core);
+                    if (establisedRoute == null) {
+                        tested[core] = true;//Se marca el core probado
+                        if (!Arrays.asList(tested).contains(false)) {//Se ve si ya se probaron todos los cores
+                            System.out.println("Demanda " + demandsQ + " BLOQUEADA ");
+                            blocked = true;
+                            demand.setBlocked(true);
+                            slotsBlocked += demand.getFs();
+                            blocksQ++;
+                        }
+                    } else {
+                        //Ruta establecida
+                        establishedRoutes.add((EstablisedRoute) establisedRoute);
+                        kspList.add(kspaths);
+                        Utils.assignFs((EstablisedRoute) establisedRoute, core);
+                        System.out.println("Ruta establecida: De " + demand.getSource() + " a " + demand.getDestination() + " en Core: " + core);
+                    }
+                    if (establisedRoute != null || demand.getBlocked())
+                        break;
                 }
-            }*/
-
-
-            ReleasedSlots rSlots = new ReleasedSlots();
-            rSlots.setTime(i + 2);
-            rSlots.setReleased(true);
-            //rSlots.setReleasedSlots(this.setTimeLife(net));
-            //this.template.convertAndSend("/message", rSlots);
-
+            } catch (java.lang.Exception e) {
+                e.printStackTrace();
+            }
         }
+
         Map<String, Boolean> map = new LinkedHashMap<>();
         map.put("end", true);
         System.out.println("Resumen general del simulador");
@@ -137,7 +120,7 @@ public class SimuladorController {
 
     @GetMapping(path= "/getTopology")
     public String getTopologia() {
-       /* Graph g = createTopology2("nsfnet.json",4,12.5,350);
+        /* Graph g = createTopology2("nsfnet.json",4,12.5,350);
         KShortestSimplePaths ksp = new KShortestSimplePaths(g);
 
             //k caminos más cortos entre source y destination de la demanda actual

@@ -9,6 +9,7 @@ public class Options {
     private int fsRangeMax;
     private int cores;
     private String metricaDesfrag;
+    private String sortestAlg;
     private String routingAlg;
     private int demandsQuantity;
 
@@ -90,5 +91,13 @@ public class Options {
 
     public void setDemandsQuantity(int demandsQuantity) {
         this.demandsQuantity = demandsQuantity;
+    }
+
+    public String getSortestAlg() {
+        return sortestAlg;
+    }
+
+    public void setSortestAlg(String sortestAlg) {
+        this.sortestAlg = sortestAlg;
     }
 }

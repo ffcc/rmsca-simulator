@@ -14,8 +14,8 @@ import py.una.pol.rest.model.*;
 
 public class Utils {
 
-    public static List<Demand> generateDemands(int demandasQuantity, int totalTime, int fsMin, int fsMax, int cantNodos){
-        int i, j, source, destination, fs, tLife;
+    public static List<Demand> generateDemands(int demandasQuantity, int fsMin, int fsMax, int cantNodos){
+        int i, j, source, destination, fs;
         List<Demand> demands = new ArrayList<>();
         Random rand;
 
