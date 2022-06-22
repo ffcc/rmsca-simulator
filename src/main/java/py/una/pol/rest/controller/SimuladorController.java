@@ -36,7 +36,7 @@ public class SimuladorController {
         FileWriter file = new FileWriter("bloqueos.csv");
         String aco_def_metric = options.getMetricaDesfrag();
         BufferedWriter writer = new BufferedWriter(file);
-        int slotsBlocked, demandsQ = 1, defragsQ = 0, blocksQ = 0, defragsF = 0;
+        int slotsBlocked, demandsQ = 0, defragsQ = 0, blocksQ = 0, defragsF = 0;
         writer.write("Entropy, Pc, Msi, Bfr, Shf, % Uso, Slots Bloqueados, Prediccion");
         writer.newLine();
 
@@ -55,11 +55,8 @@ public class SimuladorController {
         for(Demand demand : demands) {
 
             boolean blocked = false;
-            System.out.println("Tiempo: " + (demandsQ) + ", Cantidad de rutas activas: " + establishedRoutes.size());
-
-            System.out.println("Cantidad de demandas: " + demandsQ);
-            writer.write("cantidad de demandas: " + demandsQ);
-            writer.newLine();
+            System.out.println("-------PROCESANDO NUEVA DEMANDA----------");
+            System.out.println("Demanda: " + (demandsQ) + ", Cantidad de rutas en uso: " + establishedRoutes.size());
             slotsBlocked = 0;
             demandsQ++;
             kspaths.clear();
@@ -97,7 +94,7 @@ public class SimuladorController {
                         establishedRoutes.add((EstablisedRoute) establisedRoute);
                         kspList.add(kspaths);
                         Utils.assignFs((EstablisedRoute) establisedRoute, core);
-                        System.out.println("Ruta establecida: De " + demand.getSource() + " a " + demand.getDestination() + " en Core: " + core);
+                        System.out.println("Ruta establecida: { origen: " + demand.getSource() + " destino: " + demand.getDestination() + " en el Core: " + core + " utilizando " + demand.getFs() + " FS [ " + ((EstablisedRoute) establisedRoute).getFsIndexBegin() + " - "+ ((EstablisedRoute) establisedRoute).getFsIndexEnd() + "] } ");
                     }
                     if (establisedRoute != null || demand.getBlocked())
                         break;
@@ -112,8 +109,8 @@ public class SimuladorController {
         System.out.println("Resumen general del simulador");
         System.out.println("Cantidad de demandas: " + demandsQ);
         System.out.println("Cantidad de bloqueos: " + blocksQ);
-        System.out.println("Cantidad de defragmentaciones: " + defragsQ);
-        System.out.println("Cantidad de desfragmentaciones fallidas: " + defragsF);
+        //System.out.println("Cantidad de defragmentaciones: " + defragsQ);
+        //System.out.println("Cantidad de desfragmentaciones fallidas: " + defragsF);
         System.out.println("Fin Simulación");
         writer.close();
     }

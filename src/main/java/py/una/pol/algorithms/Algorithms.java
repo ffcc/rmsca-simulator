@@ -13,7 +13,6 @@ import py.una.pol.rest.model.Link;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.math.BigDecimal;
 import java.util.*;
 
 import static py.una.pol.utils.Utils.*;
@@ -29,12 +28,14 @@ public class Algorithms {
             Arrays.fill(so, false);//Se inicializa todo el espectro como libre
             GraphPath ksp = kspaths.get(k);
 
-            //Se recorren todos los fs y se setean los slots ocupados con true
+            //Se recorre el core n de todos los links del path pasado por parametro, principio de continuidad
+            //Se verifican los fs y se setean los slots ocupados con true
             for(int i = 0; i < capacity; i++){
                 for (Object path: ksp.getEdgeList()){
                     Link link = (Link) path;
                     FrecuencySlot fs = link.getCores().get(core).getFs().get(i);
                     if(!fs.isFree()){
+                        //System.out.println("FS ocupado: " + i);
                         so[i] = true;
                     }
                 }
@@ -42,10 +43,12 @@ public class Algorithms {
             begin = count = 0;
             int j;
             capacity:
+            //se verifica que la cantidad fs que se solicita ocupar esten disponibles y contiguos dentro del core
             for(int i = 0; i < capacity; i++){
                 count = 0;
                 if(!so[i]){
                     begin = i;
+                    //se contabiliza los slots libres
                     for(j = i; j < capacity; j++){
                         if(!so[j]){
                             count++;
@@ -53,7 +56,9 @@ public class Algorithms {
                             i = j;
                             break;
                         }
+                        //si la cantidad de slots libres == slots que necesita la demanda
                         if(count == demand.getFs()){
+                            System.out.println("Existe espacio en el core: " + core + " de FS: " + i + " a " + j + " cantidad FS requerida: " + demand.getFs());
                             kspPlaced.add(kspaths.get(k));
                             break capacity;
                         }
@@ -64,7 +69,6 @@ public class Algorithms {
             }
             k++;
         }
-        System.out.println("CANTIDAD DE KSP UBICADOS: " + kspPlaced.size());
 
         if(kspPlaced.size() == 0)
             return null;

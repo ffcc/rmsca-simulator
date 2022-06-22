@@ -68,4 +68,8 @@ public class EstablisedRoute {
     public void setCore(int core) {
         this.core = core;
     }
+
+    public int getFsIndexEnd() {
+        return (this.fsIndexBegin + this.fs) - 1;
+    }
 }

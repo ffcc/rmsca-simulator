@@ -27,7 +27,7 @@ public class Utils {
             while (source == destination) {
                 destination = rand.nextInt(cantNodos);
             }
-            System.out.println("Demanda { source: " + source + ", destination: " + destination + ", fs: " + fs + " }");
+            System.out.println("Demanda { origen: " + source + ", destino: " + destination + ", FS: " + fs + " }");
             demands.add(new Demand(source, destination, fs));
         }
         return demands;
