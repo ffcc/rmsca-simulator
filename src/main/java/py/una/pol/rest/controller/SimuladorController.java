@@ -7,6 +7,7 @@ import org.jgrapht.GraphPath;
 import org.jgrapht.alg.shortestpath.DijkstraShortestPath;
 import org.jgrapht.alg.shortestpath.KShortestSimplePaths;
 import org.jgrapht.graph.SimpleWeightedGraph;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import py.una.pol.algorithms.Algorithms;
 import py.una.pol.rest.model.*;
@@ -26,7 +27,7 @@ import java.util.*;
 public class SimuladorController {
 
     @PostMapping(path= "/simular")
-    public void simular(@RequestBody Options options) throws Exception {
+    public List<Response> simular(@RequestBody Options options) throws Exception {
         List<Demand> demands;
         List<EstablisedRoute> establishedRoutes = new ArrayList<>();
         //se crea la topoligia con los parámetros seleccionados
@@ -52,11 +53,14 @@ public class SimuladorController {
         int core = 0;
         slotsBlocked = 0;
 
+        List<Response> responses = new ArrayList<>();
         for(Demand demand : demands) {
-
+            Response response = new Response();
             boolean blocked = false;
             System.out.println("-------PROCESANDO NUEVA DEMANDA----------");
-            System.out.println("Demanda: " + (demandsQ) + ", Cantidad de rutas en uso: " + establishedRoutes.size());
+            response.setNroDemanda(demandsQ);
+            response.setCantRutasActivas(establishedRoutes.size());
+            System.out.println("Demanda: " + response.getNroDemanda() + ", Cantidad de rutas en uso: " + establishedRoutes.size());
             slotsBlocked = 0;
             demandsQ++;
             kspaths.clear();
@@ -77,13 +81,16 @@ public class SimuladorController {
                 Arrays.fill(tested, false);
                 while (true) {
                     core = getCore(options.getCores(), tested);
+                    response.setCore(core);
                     Class<?>[] paramTypes = {Graph.class, List.class, Demand.class, int.class, int.class};
                     Method method = Algorithms.class.getMethod(options.getRoutingAlg(), paramTypes);
                     Object establisedRoute = method.invoke(this, net, kspaths, demand, options.getCapacity(), core);
                     if (establisedRoute == null) {
                         tested[core] = true;//Se marca el core probado
                         if (!Arrays.asList(tested).contains(false)) {//Se ve si ya se probaron todos los cores
+                            response.setBlock(true);
                             System.out.println("Demanda " + demandsQ + " BLOQUEADA ");
+                            response.setSlotBlock(demand.getFs());
                             blocked = true;
                             demand.setBlocked(true);
                             slotsBlocked += demand.getFs();
@@ -94,6 +101,11 @@ public class SimuladorController {
                         establishedRoutes.add((EstablisedRoute) establisedRoute);
                         kspList.add(kspaths);
                         Utils.assignFs((EstablisedRoute) establisedRoute, core);
+                        response.setOrigen(demand.getSource());
+                        response.setDestino(demand.getDestination());
+                        response.setFs(demand.getFs());
+                        response.setFsIndexBegin(((EstablisedRoute) establisedRoute).getFsIndexBegin());
+                        response.setPath(obtenerCaminos(kspaths, core));
                         System.out.println("Ruta establecida: { origen: " + demand.getSource() + " destino: " + demand.getDestination() + " en el Core: " + core + " utilizando " + demand.getFs() + " FS [ " + ((EstablisedRoute) establisedRoute).getFsIndexBegin() + " - "+ ((EstablisedRoute) establisedRoute).getFsIndexEnd() + "] } ");
                     }
                     if (establisedRoute != null || demand.getBlocked())
@@ -102,6 +114,7 @@ public class SimuladorController {
             } catch (java.lang.Exception e) {
                 e.printStackTrace();
             }
+            responses.add(response);
         }
 
         Map<String, Boolean> map = new LinkedHashMap<>();
@@ -113,6 +126,22 @@ public class SimuladorController {
         //System.out.println("Cantidad de desfragmentaciones fallidas: " + defragsF);
         System.out.println("Fin Simulación");
         writer.close();
+
+        return responses;
+    }
+
+    //para imprimir las rutas que se eligio de origen a destino
+    public List<Integer> obtenerCaminos(List<GraphPath> kspaths, int core){
+        List<Integer> listaCaminos = new ArrayList<>();
+        for (GraphPath caminos : kspaths) {
+            for (Object camino: caminos.getEdgeList()) {
+                Link link = (Link) camino;
+                System.out.println("Caminos: De " + link.getTo() + " a " + link.getFrom());
+                listaCaminos.add(link.getFrom());
+                listaCaminos.add(link.getTo());
+            }
+        }
+        return listaCaminos;
     }
 
     @GetMapping(path= "/getTopology")
