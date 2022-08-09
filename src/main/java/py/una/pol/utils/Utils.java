@@ -175,7 +175,7 @@ public class Utils {
         return frees;
     }
 
-    public static Map numCuts(GraphPath  ksp, Graph graph, int capacity, int core, int fs) {
+    public static Map    numCuts(GraphPath  ksp, Graph graph, int capacity, int core, int fs) {
         int cuts = -1;
         int slot = -1;
         Map<String, Integer> slotCuts = new HashMap<>();

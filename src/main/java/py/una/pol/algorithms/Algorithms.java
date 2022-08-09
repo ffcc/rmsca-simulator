@@ -1,4 +1,4 @@
-package py.una.pol.algorithms;
+package     py.una.pol.algorithms;
 
 import org.jgrapht.Graph;
 import org.jgrapht.GraphPath;

@@ -33,6 +33,7 @@ public class SimuladorController {
         //se crea la topoligia con los parámetros seleccionados
         Graph<Integer, Link> net = createTopology(options.getTopology(), options.getCores(), options.getFsWidth(), options.getCapacity());
         List<List<GraphPath>> kspList = new ArrayList<>();
+        List<BFR> listaBfr;
         //archivo donde vamos a guardar todos los resultados
         FileWriter file = new FileWriter("bloqueos.csv");
         String aco_def_metric = options.getMetricaDesfrag();
@@ -107,6 +108,7 @@ public class SimuladorController {
                         response.setFsIndexBegin(((EstablisedRoute) establisedRoute).getFsIndexBegin());
                         response.setPath(obtenerCaminos(kspaths, core));
                         System.out.println("Ruta establecida: { origen: " + demand.getSource() + " destino: " + demand.getDestination() + " en el Core: " + core + " utilizando " + demand.getFs() + " FS [ " + ((EstablisedRoute) establisedRoute).getFsIndexBegin() + " - "+ ((EstablisedRoute) establisedRoute).getFsIndexEnd() + "] } ");
+                        System.out.println("Imprimiendo BFR: " + Algorithms.BFR(net, options.getCapacity()));
                     }
                     if (establisedRoute != null || demand.getBlocked())
                         break;
