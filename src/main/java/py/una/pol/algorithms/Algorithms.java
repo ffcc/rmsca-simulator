@@ -600,14 +600,14 @@ public class Algorithms {
         int contadorLink=0;
         for (Link link: links) {
             contadorLink++;
-            System.out.println("Link N°: " + contadorLink);
+            //System.out.println("Link N°: " + contadorLink);
             contadorCore=0;
             for (Core core: link.getCores()) {
                 contadorCore++;
                 ocuppiedSlotCount = 0;
                 freeBlockSize = 0;
                 maxBlock = 0;
-                System.out.println("Core N°: " + contadorCore);
+                // System.out.println("Core N°: " + contadorCore);
                 for (int i=0; i< capacity; i++){
                     if (core.getFs().get(i).isFree()){
                         freeBlockSize++;
