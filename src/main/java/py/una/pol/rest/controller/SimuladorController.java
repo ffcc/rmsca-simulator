@@ -138,7 +138,7 @@ public class SimuladorController {
         for (GraphPath caminos : kspaths) {
             for (Object camino: caminos.getEdgeList()) {
                 Link link = (Link) camino;
-                System.out.println("Caminos: De " + link.getTo() + " a " + link.getFrom());
+                System.out.println("Caminos: De " + link.getFrom() + " a " + link.getTo());
                 listaCaminos.add(link.getFrom());
                 listaCaminos.add(link.getTo());
             }

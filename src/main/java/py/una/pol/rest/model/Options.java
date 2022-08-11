@@ -12,6 +12,7 @@ public class Options {
     private String sortestAlg;
     private String routingAlg;
     private int demandsQuantity;
+    private String sortingDemands;
 
     public int getTime() {
         return time;
@@ -99,5 +100,13 @@ public class Options {
 
     public void setSortestAlg(String sortestAlg) {
         this.sortestAlg = sortestAlg;
+    }
+
+    public String getSortingDemands() {
+        return sortingDemands;
+    }
+
+    public void setSortingDemands(String sortingDemands) {
+        this.sortingDemands = sortingDemands;
     }
 }
