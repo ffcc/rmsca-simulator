@@ -1,7 +1,6 @@
 package py.una.pol.rest.model;
 
 public class Options {
-    private int time;
     private String topology;
     private float fsWidth;
     private int capacity;
@@ -13,14 +12,6 @@ public class Options {
     private String routingAlg;
     private int demandsQuantity;
     private String sortingDemands;
-
-    public int getTime() {
-        return time;
-    }
-
-    public void setTime(int time) {
-        this.time = time;
-    }
 
     public String getTopology() {
         return topology;

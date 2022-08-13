@@ -107,6 +107,7 @@ public class SimuladorController {
                         response.setFs(demand.getFs());
                         response.setFsIndexBegin(((EstablisedRoute) establisedRoute).getFsIndexBegin());
                         response.setPath(obtenerCaminos(kspaths, core));
+                        System.out.println("PATH: " + imprimirCaminos(kspaths, core));
                         System.out.println("Ruta establecida: { origen: " + demand.getSource() + " destino: " + demand.getDestination() + " en el Core: " + core + " utilizando " + demand.getFs() + " FS [ " + ((EstablisedRoute) establisedRoute).getFsIndexBegin() + " - "+ ((EstablisedRoute) establisedRoute).getFsIndexEnd() + "] } ");
                         System.out.println("Imprimiendo BFR: " + Algorithms.BFR(net, options.getCapacity()));
                     }
@@ -138,12 +139,22 @@ public class SimuladorController {
         for (GraphPath caminos : kspaths) {
             for (Object camino: caminos.getEdgeList()) {
                 Link link = (Link) camino;
-                System.out.println("Caminos: De " + link.getFrom() + " a " + link.getTo());
-                listaCaminos.add(link.getFrom());
+                //System.out.println("Caminos: De " + link.getFrom() + " a " + link.getTo());
                 listaCaminos.add(link.getTo());
+                listaCaminos.add(link.getFrom());
             }
         }
         return listaCaminos;
+    }
+
+    public String imprimirCaminos(List<GraphPath> kspaths, int core) {
+        List<Integer> listaCaminos = new ArrayList<>();
+        listaCaminos = obtenerCaminos(kspaths, core);
+        String path = "";
+        for (int i = 0; i < listaCaminos.size(); i++) {
+            path += " --> " + listaCaminos.get(i);
+        }
+        return path;
     }
 
     @GetMapping(path= "/getTopology")
