@@ -1,0 +1,112 @@
+{
+  "10": {
+    "BPSK": {
+      "ancho_de_banda": 12.5,
+      "cantidad_de_fs": 1
+    }
+  },
+  "40": {
+    "BPSK": {
+      "ancho_de_banda": 50,
+      "cantidad_de_fs": 4
+    },
+    "QPSK": {
+      "ancho_de_banda": 25,
+      "cantidad_de_fs": 2
+    },
+    "8-QAM": {
+      "ancho_de_banda": 25,
+      "cantidad_de_fs": 2
+    },
+    "16-QAM": {
+      "ancho_de_banda": 12.5,
+      "cantidad_de_fs": 1
+    },
+    "32-QAM": {
+      "ancho_de_banda": 12.5,
+      "cantidad_de_fs": 1
+    },
+    "64-QAM": {
+      "ancho_de_banda": 12.5,
+      "cantidad_de_fs": 1
+    }
+  },
+  "100": {
+    "BPSK": {
+      "ancho_de_banda": 100,
+      "cantidad_de_fs": 8
+    },
+    "QPSK": {
+      "ancho_de_banda": 50,
+      "cantidad_de_fs": 4
+    },
+    "8-QAM": {
+      "ancho_de_banda": 37.5,
+      "cantidad_de_fs": 3
+    },
+    "16-QAM": {
+      "ancho_de_banda": 25,
+      "cantidad_de_fs": 2
+    },
+    "32-QAM": {
+      "ancho_de_banda": 25,
+      "cantidad_de_fs": 2
+    },
+    "64-QAM": {
+      "ancho_de_banda": 25,
+      "cantidad_de_fs": 2
+    }
+  },
+  "400": {
+    "BPSK": {
+      "ancho_de_banda": 400,
+      "cantidad_de_fs": 32
+    },
+    "QPSK": {
+      "ancho_de_banda": 200,
+      "cantidad_de_fs": 16
+    },
+    "8-QAM": {
+      "ancho_de_banda": 137.5,
+      "cantidad_de_fs": 11
+    },
+    "16-QAM": {
+      "ancho_de_banda": 100,
+      "cantidad_de_fs": 8
+    },
+    "32-QAM": {
+      "ancho_de_banda": 87.5,
+      "cantidad_de_fs": 7
+    },
+    "64-QAM": {
+      "ancho_de_banda": 75,
+      "cantidad_de_fs": 6
+    }
+  },
+  "1000": {
+    "BPSK": {
+      "ancho_de_banda": 1000,
+      "cantidad_de_fs": 80
+    },
+    "QPSK": {
+      "ancho_de_banda": 500,
+      "cantidad_de_fs": 40
+    },
+    "8-QAM": {
+      "ancho_de_banda": 337.5,
+      "cantidad_de_fs": 27
+    },
+    "16-QAM": {
+      "ancho_de_banda": 250,
+      "cantidad_de_fs": 20
+    },
+    "32-QAM": {
+      "ancho_de_banda": 200,
+      "cantidad_de_fs": 16
+    },
+    "64-QAM": {
+      "ancho_de_banda": 175,
+      "cantidad_de_fs": 14
+    }
+  }
+}

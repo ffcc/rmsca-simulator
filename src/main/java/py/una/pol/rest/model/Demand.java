@@ -4,14 +4,16 @@ public class Demand {
     private int source;
     private int destination;
     private int fs;
+    private int bitRate;
     private int timeLife;
     private boolean blocked;
 
-    public Demand(int source, int destination, int fs) {
+    public Demand(int source, int destination, int fs, int bitRate) {
         this.source = source;
         this.destination = destination;
         this.fs = fs;
         this.blocked = false;
+        this.bitRate = bitRate;
     }
 
     public int getSource() {
@@ -36,6 +38,14 @@ public class Demand {
 
     public void setFs(int fs) {
         this.fs = fs;
+    }
+
+    public int getBitRate() {
+        return bitRate;
+    }
+
+    public void setBitRate(int bitRate) {
+        this.bitRate = bitRate;
     }
 
     public int getTimeLife() {

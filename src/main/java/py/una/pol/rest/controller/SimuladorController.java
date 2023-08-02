@@ -7,15 +7,13 @@ import org.jgrapht.GraphPath;
 import org.jgrapht.alg.shortestpath.DijkstraShortestPath;
 import org.jgrapht.alg.shortestpath.KShortestSimplePaths;
 import org.jgrapht.graph.SimpleWeightedGraph;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import py.una.pol.algorithms.Algorithms;
+import py.una.pol.algorithms.ModulationCalculator;
 import py.una.pol.rest.model.*;
 import py.una.pol.utils.ResourceReader;
 import py.una.pol.utils.Utils;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
@@ -34,13 +32,8 @@ public class SimuladorController {
         Graph<Integer, Link> net = createTopology(options.getTopology(), options.getCores(), options.getFsWidth(), options.getCapacity());
         List<List<GraphPath>> kspList = new ArrayList<>();
         List<BFR> listaBfr;
-        //archivo donde vamos a guardar todos los resultados
-        FileWriter file = new FileWriter("bloqueos.csv");
-        String aco_def_metric = options.getMetricaDesfrag();
-        BufferedWriter writer = new BufferedWriter(file);
-        int slotsBlocked, demandsQ = 0, defragsQ = 0, blocksQ = 0, defragsF = 0;
-        writer.write("Entropy, Pc, Msi, Bfr, Shf, % Uso, Slots Bloqueados, Prediccion");
-        writer.newLine();
+
+        int demandsQ = 0, blocksQ = 0;
 
         //se generan aleatoriamente las demandas, de acuerdo a la cantidad proporcionadas por parámetro
         demands = Utils.generateDemands(options.getDemandsQuantity(), options.getFsRangeMin(),
@@ -52,28 +45,52 @@ public class SimuladorController {
         //colector que va a almacenar los k caminos mas cortos
         List<GraphPath> kspaths = new ArrayList<>();
         int core = 0;
-        slotsBlocked = 0;
 
+
+        //ORDENAMOS LAS DEMANDAS ASCENDENTE - DESCENDENTE - ALEATORIO NO HACER NADA
+        List<DemandDistancePair> demandDistances = new ArrayList<>();
+
+        for (Demand demand : demands) {
+            int source = demand.getSource();
+            int destination = demand.getDestination();
+
+            GraphPath<Integer, Link> shortestPath = djkt.getPath(source, destination);
+            double distance = shortestPath.getWeight();
+
+            demandDistances.add(new DemandDistancePair(demand, distance, ""));
+        }
+
+        // Ordenar en función del parámetro ascendente, descendente y aleatorio seria como viene
+        if (options.getSortingDemands().equalsIgnoreCase("ASC")) {
+            Collections.sort(demandDistances); // Orden ascendente (por defecto)
+        } else if (options.getSortingDemands().equalsIgnoreCase("DESC")) {
+            Collections.sort(demandDistances, Collections.reverseOrder()); // Orden descendente
+        }
+
+        //TERMINA ORDENAMIENTO DE LAS DEMANDAS
         List<Response> responses = new ArrayList<>();
-        for(Demand demand : demands) {
+        for(DemandDistancePair demand : demandDistances) {
             Response response = new Response();
-            boolean blocked = false;
+            //boolean blocked = false;
             System.out.println("-------PROCESANDO NUEVA DEMANDA----------");
             response.setNroDemanda(demandsQ);
             response.setCantRutasActivas(establishedRoutes.size());
             System.out.println("Demanda: " + response.getNroDemanda() + ", Cantidad de rutas en uso: " + establishedRoutes.size());
-            slotsBlocked = 0;
             demandsQ++;
             kspaths.clear();
 
             //se ejecuta dijkstra - ksp como sortest-Algorithm
             if(options.getSortestAlg().equals("Dijkstra")) {
                 //retorna el camino mas corto de fuente a destino
-                kspaths.add(djkt.getPath(demand.getSource(), demand.getDestination()));
+                kspaths.add(djkt.getPath(demand.getDemand().getSource(), demand.getDemand().getDestination()));
             } else {
                 //retorna los 5 caminos mas cortos de fuente a destino
-                kspaths = ksp.getPaths(demand.getSource(), demand.getDestination(), 5);
+                kspaths = ksp.getPaths(demand.getDemand().getSource(), demand.getDemand().getDestination(), 5);
             }
+
+            //Calcular la modulación para una demanda con una distancia específica
+            ModulationCalculator modulationCalculator = new ModulationCalculator();
+            modulationCalculator.calculateFS(demand);
 
             //busqueda de caminos disponibles, para establecer los enlaces
             try {
@@ -85,16 +102,17 @@ public class SimuladorController {
                     response.setCore(core);
                     Class<?>[] paramTypes = {Graph.class, List.class, Demand.class, int.class, int.class};
                     Method method = Algorithms.class.getMethod(options.getRoutingAlg(), paramTypes);
-                    Object establisedRoute = method.invoke(this, net, kspaths, demand, options.getCapacity(), core);
+                    Object establisedRoute = method.invoke(this, net, kspaths, demand.getDemand(), options.getCapacity(), core);
+
                     if (establisedRoute == null) {
                         tested[core] = true;//Se marca el core probado
                         if (!Arrays.asList(tested).contains(false)) {//Se ve si ya se probaron todos los cores
                             response.setBlock(true);
                             System.out.println("Demanda " + demandsQ + " BLOQUEADA ");
-                            response.setSlotBlock(demand.getFs());
-                            blocked = true;
-                            demand.setBlocked(true);
-                            slotsBlocked += demand.getFs();
+                            //response.setSlotBlock(demand.getFs());
+                            //blocked = true;
+                            demand.getDemand().setBlocked(true);
+                            //slotsBlocked += demand.getFs();
                             blocksQ++;
                         }
                     } else {
@@ -102,16 +120,16 @@ public class SimuladorController {
                         establishedRoutes.add((EstablisedRoute) establisedRoute);
                         kspList.add(kspaths);
                         Utils.assignFs((EstablisedRoute) establisedRoute, core);
-                        response.setOrigen(demand.getSource());
-                        response.setDestino(demand.getDestination());
-                        response.setFs(demand.getFs());
+                        //response.setOrigen(demand.getSource());
+                        //response.setDestino(demand.getDestination());
+                        //response.setFs(demand.getFs());
                         response.setFsIndexBegin(((EstablisedRoute) establisedRoute).getFsIndexBegin());
                         response.setPath(obtenerCaminos(kspaths, core));
                         System.out.println("PATH: " + imprimirCaminos(kspaths, core));
-                        System.out.println("Ruta establecida: { origen: " + demand.getSource() + " destino: " + demand.getDestination() + " en el Core: " + core + " utilizando " + demand.getFs() + " FS [ " + ((EstablisedRoute) establisedRoute).getFsIndexBegin() + " - "+ ((EstablisedRoute) establisedRoute).getFsIndexEnd() + "] } ");
+                        //System.out.println("Ruta establecida: { origen: " + demand.getSource() + " destino: " + demand.getDestination() + " en el Core: " + core + " utilizando " + demand.getFs() + " FS [ " + ((EstablisedRoute) establisedRoute).getFsIndexBegin() + " - "+ ((EstablisedRoute) establisedRoute).getFsIndexEnd() + "] } ");
                         System.out.println("Imprimiendo BFR: " + Algorithms.BFR(net, options.getCapacity()));
                     }
-                    if (establisedRoute != null || demand.getBlocked())
+                    if (establisedRoute != null || demand.getDemand().getBlocked())
                         break;
                 }
             } catch (java.lang.Exception e) {
@@ -128,7 +146,6 @@ public class SimuladorController {
         //System.out.println("Cantidad de defragmentaciones: " + defragsQ);
         //System.out.println("Cantidad de desfragmentaciones fallidas: " + defragsF);
         System.out.println("Fin Simulación");
-        writer.close();
 
         return responses;
     }
@@ -195,6 +212,7 @@ public class SimuladorController {
             InputStream is = ResourceReader.getFileFromResourceAsStream(fileName);
             JsonNode object = objectMapper.readTree(is);
 
+            //se agregan los vertices
             for (int i = 0; i < object.get("network").size(); i++) {
                 g.addVertex(i);
             }

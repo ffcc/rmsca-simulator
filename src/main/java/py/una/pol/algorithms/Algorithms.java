@@ -1,4 +1,4 @@
-package     py.una.pol.algorithms;
+package py.una.pol.algorithms;
 
 import org.jgrapht.Graph;
 import org.jgrapht.GraphPath;
@@ -18,7 +18,7 @@ import java.util.*;
 import static py.una.pol.utils.Utils.*;
 
 public class Algorithms {
-    public static EstablisedRoute fa(Graph graph, List<GraphPath> kspaths, Demand demand, int capacity, int core){
+    public static EstablisedRoute fa(Graph graph, List<GraphPath> kspaths, Demand demand, int capacity, int core){ //fragmentation aware
         int begin, count;
         boolean  so[] = new boolean[capacity]; //Representa los fs ocupados del espectro de todos los enlaces.
         List<GraphPath> kspPlaced = new ArrayList<>();
@@ -78,7 +78,7 @@ public class Algorithms {
         return establisedRoute;
     }
 
-    public static EstablisedRoute faca(Graph graph, List<GraphPath> kspaths, Demand demand, int capacity, int core){
+    public static EstablisedRoute faca(Graph graph, List<GraphPath> kspaths, Demand demand, int capacity, int core){ // fragmentation aware - congestion avoidance
         int count;
         boolean  so[] = new boolean[capacity]; //Representa la ocupación del espectro de todos los enlaces.
         List<GraphPath> kspPlaced = new ArrayList<>();
@@ -350,7 +350,7 @@ public class Algorithms {
                     actualOptimalSelectedRoutes.clear();
                     actualOptimalIndexes.clear();
                     for (int j = 0; j < selectedRoutes.size() ; j++) {
-                        Demand demand = new Demand(selectedRoutes.get(j).getFrom(), selectedRoutes.get(j).getTo(), selectedRoutes.get(j).getFs());
+                        Demand demand = new Demand(selectedRoutes.get(j).getFrom(), selectedRoutes.get(j).getTo(), selectedRoutes.get(j).getFs(), 10);
                         List<GraphPath> kspaths = kspList.get(usedIndexes.get(j));
                         boolean [] tested = new boolean[selectedRoutes.get(j).getPath().get(0).getCores().size()];
                         Arrays.fill(tested, false);
@@ -631,6 +631,7 @@ public class Algorithms {
 
         return BFRLinks;
     }
+
     public static double BFR(Graph g, int capacity){
         double BFRLinks = 0;
         int cores;

@@ -1,0 +1,26 @@
+[
+  {
+    "modulation": "BPSK",
+    "distance": 8000
+  },
+  {
+    "modulation": "QPSK",
+    "distance": 4000
+  },
+  {
+    "modulation": "8-QAM",
+    "distance": 2000
+  },
+  {
+    "modulation": "16-QAM",
+    "distance": 1000
+  },
+  {
+    "modulation": "32-QAM",
+    "distance": 500
+  },
+  {
+    "modulation": "64-QAM",
+    "distance": 250
+  }
+]
