@@ -70,6 +70,7 @@ public class ModulationCalculator {
             if (modulationInfoJson != null) {
                 demand.setModulation(modulation);
                 demand.getDemand().setFs(modulationInfoJson.getInt("cantidad_de_fs"));
+                System.out.println("Bitrate: " + bitrate + ", Modulación: " + modulation + ", y FS: " + modulationInfoJson.getInt("cantidad_de_fs") + "");
                 return;
             }
         }
@@ -77,6 +78,7 @@ public class ModulationCalculator {
         // Si no se encuentra información para la modulación y el bitrate especificados,
         // devolver un valor predeterminado o lanzar una excepción según el caso
         demand.setFs(-1); // Valor predeterminado, puedes ajustar este valor según tus necesidades
+        System.out.println("No se encontró FS para la modulación");
         // O bien, puedes lanzar una excepción si no se encuentra información para la modulación y el bitrate:
         // throw new IllegalArgumentException("No se encontró información para la modulación y el bitrate especificados.");
     }
