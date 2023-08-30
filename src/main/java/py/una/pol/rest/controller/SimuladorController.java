@@ -67,7 +67,7 @@ public class SimuladorController {
             Collections.sort(demandDistances, Collections.reverseOrder()); // Orden descendente
         }
 
-        //TERMINA ORDENAMIENTO DE LAS DEMANDAS
+        //Procesamos las demandas
         List<Response> responses = new ArrayList<>();
         for(DemandDistancePair demand : demandDistances) {
             Response response = new Response();
@@ -99,7 +99,7 @@ public class SimuladorController {
                 Arrays.fill(tested, false);
                 while (true) {
                     core = getCore(options.getCores(), tested);
-                    response.setCore(core);
+                    //response.setCore(core);
                     Class<?>[] paramTypes = {Graph.class, List.class, Demand.class, int.class, int.class};
                     Method method = Algorithms.class.getMethod(options.getRoutingAlg(), paramTypes);
                     Object establisedRoute = method.invoke(this, net, kspaths, demand.getDemand(), options.getCapacity(), core);

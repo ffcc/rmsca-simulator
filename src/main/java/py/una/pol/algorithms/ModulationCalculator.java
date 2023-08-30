@@ -6,10 +6,7 @@ import py.una.pol.rest.model.DemandDistancePair;
 import py.una.pol.rest.model.ModulationInfo;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 public class ModulationCalculator {
 
@@ -58,27 +55,34 @@ public class ModulationCalculator {
         // Obtener la modulación adecuada para la demanda
         String modulation = calculateModulation(demand);
 
+        // Definir rangos de bitrate según la modulación
+        int[] bitrates;
+
+        if ("BPSK".equals(modulation)) {
+            // Rangos de bitrate para BPSK
+            bitrates = new int[]{10, 40, 100, 400, 1000};
+        } else {
+            // Rangos de bitrate para otras modulaciones
+            bitrates = new int[]{40, 100, 400, 1000};
+        }
+
+        // Elegir aleatoriamente un bitrate dentro del rango
+        Random random = new Random();
+        int selectedBitrate = bitrates[random.nextInt(bitrates.length)];
+
+        // Cargar el archivo JSON
         String bitrateFileName = "modulation/bitrate.json";
         String bitrateJsonStr = new String(ModulationCalculator.class.getClassLoader().getResourceAsStream(bitrateFileName).readAllBytes());
         JSONObject bitrateJson = new JSONObject(bitrateJsonStr);
-        int bitrate = demand.getDemand().getBitRate();
 
-        // Buscar la cantidad de FS para la modulación y el bitrate dados
-        JSONObject modulationJson = bitrateJson.optJSONObject(String.valueOf(bitrate));
-        if (modulationJson != null) {
-            JSONObject modulationInfoJson = modulationJson.optJSONObject(modulation);
-            if (modulationInfoJson != null) {
-                demand.setModulation(modulation);
-                demand.getDemand().setFs(modulationInfoJson.getInt("cantidad_de_fs"));
-                return;
-            }
-        }
+        // Buscar la cantidad de FS correspondiente al bitrate seleccionado y la modulación
+        JSONObject modulationInfo = bitrateJson.getJSONObject(String.valueOf(selectedBitrate));
+        int fs = modulationInfo.getJSONObject(modulation).getInt("cantidad_de_fs");
 
-        // Si no se encuentra información para la modulación y el bitrate especificados,
-        // devolver un valor predeterminado o lanzar una excepción según el caso
-        demand.setFs(-1); // Valor predeterminado, puedes ajustar este valor según tus necesidades
-        // O bien, puedes lanzar una excepción si no se encuentra información para la modulación y el bitrate:
-        // throw new IllegalArgumentException("No se encontró información para la modulación y el bitrate especificados.");
+        // Establecer la modulación y la cantidad de FS en la demanda
+        demand.setModulation(modulation);
+        demand.getDemand().setFs(fs);
+
     }
 
     private List<ModulationInfo> parseJsonToModulationInfoList(String jsonStr) {

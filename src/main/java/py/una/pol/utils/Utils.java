@@ -16,7 +16,7 @@ public class Utils {
 
     public static List<Demand> generateDemands(int demandasQuantity, int fsMin, int fsMax, int cantNodos){
         int i, j, source, destination, fs, randomBitRate;
-        int[] bitRates = {10, 40, 100, 400, 1000};
+        //int[] bitRates = {10, 40, 100, 400, 1000};
 
         List<Demand> demands = new ArrayList<>();
         Random rand;
@@ -26,12 +26,12 @@ public class Utils {
             source = rand.nextInt(cantNodos);
             destination = rand.nextInt(cantNodos);
             fs = (int) (Math.random() * (fsMax-fsMin+1)) + fsMin;
-            randomBitRate = bitRates[rand.nextInt(bitRates.length)];
+            //randomBitRate = bitRates[rand.nextInt(bitRates.length)];
             while (source == destination) {
                 destination = rand.nextInt(cantNodos);
             }
             System.out.println("Demanda { origen: " + source + ", destino: " + destination + ", FS: " + fs + " }");
-            demands.add(new Demand(source, destination, fs, randomBitRate));
+            demands.add(new Demand(source, destination, fs, 0));
         }
         return demands;
     }
