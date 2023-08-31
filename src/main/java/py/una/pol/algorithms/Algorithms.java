@@ -350,7 +350,7 @@ public class Algorithms {
                     actualOptimalSelectedRoutes.clear();
                     actualOptimalIndexes.clear();
                     for (int j = 0; j < selectedRoutes.size() ; j++) {
-                        Demand demand = new Demand(selectedRoutes.get(j).getFrom(), selectedRoutes.get(j).getTo(), selectedRoutes.get(j).getFs(), 10);
+                        Demand demand = new Demand(selectedRoutes.get(j).getFrom(), selectedRoutes.get(j).getTo(), 10);
                         List<GraphPath> kspaths = kspList.get(usedIndexes.get(j));
                         boolean [] tested = new boolean[selectedRoutes.get(j).getPath().get(0).getCores().size()];
                         Arrays.fill(tested, false);
