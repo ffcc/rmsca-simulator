@@ -25,13 +25,13 @@ public class Utils {
             rand = new Random();
             source = rand.nextInt(cantNodos);
             destination = rand.nextInt(cantNodos);
-            fs = (int) (Math.random() * (fsMax-fsMin+1)) + fsMin;
+            //fs = (int) (Math.random() * (fsMax-fsMin+1)) + fsMin;
             //randomBitRate = bitRates[rand.nextInt(bitRates.length)];
             while (source == destination) {
                 destination = rand.nextInt(cantNodos);
             }
-            System.out.println("Demanda { origen: " + source + ", destino: " + destination + ", FS: " + fs + " }");
-            demands.add(new Demand(source, destination, fs, 0));
+            System.out.println("Demanda { origen: " + source + ", destino: " + destination + " }");
+            demands.add(new Demand(source, destination));
         }
         return demands;
     }
