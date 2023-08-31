@@ -83,6 +83,8 @@ public class ModulationCalculator {
         demand.setModulation(modulation);
         demand.getDemand().setFs(fs);
 
+        System.out.println("bitrate: " + selectedBitrate + ", Modulacion: " + modulation + " y FS: " + fs);
+
     }
 
     private List<ModulationInfo> parseJsonToModulationInfoList(String jsonStr) {
