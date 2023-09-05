@@ -23,23 +23,13 @@ public class ModulationCalculator {
         Collections.sort(modulationInfoList, Comparator.comparingDouble(info -> info.distance));
 
         // Encontrar la modulación adecuada utilizando búsqueda binaria
-        int left = 0;
-        int right = modulationInfoList.size() - 1;
         String selectedModulation = null;
 
-        // Si la distancia es menor que la distancia más pequeña, seleccionar la modulación más baja
-        if (demand.getDistance() < modulationInfoList.get(0).distance) {
-            selectedModulation = modulationInfoList.get(0).modulation;
-        } else {
-            while (left <= right) {
-                int mid = left + (right - left) / 2;
-                ModulationInfo info = modulationInfoList.get(mid);
-                if (info.distance <= demand.getDistance()) {
-                    selectedModulation = info.modulation;
-                    left = mid + 1; // Buscar en la mitad derecha
-                } else {
-                    right = mid - 1; // Buscar en la mitad izquierda
-                }
+        // recorremos la lista de modulaciones, y elegimos uno acorde a la distancia que necesitamos
+        for (ModulationInfo info: modulationInfoList) {
+            if (demand.getDistance() <= info.distance) {
+                selectedModulation = info.modulation;
+                break;
             }
         }
 
