@@ -50,10 +50,11 @@ public class ModulationCalculator {
 
         if ("BPSK".equals(modulation)) {
             // Rangos de bitrate para BPSK
-            bitrates = new int[]{10, 40, 100, 400, 1000};
+            bitrates = new int[]{10, 40, 100};
+        } else if ("QPSK".equals(modulation) || "8-QAM".equals(modulation)) {
+            bitrates = new int[]{40, 100};
         } else {
-            // Rangos de bitrate para otras modulaciones
-            bitrates = new int[]{40, 100, 400, 1000};
+            bitrates = new int[]{40, 100, 400};
         }
 
         // Elegir aleatoriamente un bitrate dentro del rango
@@ -72,6 +73,7 @@ public class ModulationCalculator {
         // Establecer la modulación y la cantidad de FS en la demanda
         demand.setModulation(modulation);
         demand.getDemand().setFs(fs);
+        demand.getDemand().setBitRate(selectedBitrate);
 
         System.out.println("bitrate: " + selectedBitrate + ", Modulacion: " + modulation + " y FS: " + fs);
 

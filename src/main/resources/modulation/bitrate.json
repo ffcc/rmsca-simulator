@@ -83,30 +83,4 @@
       "cantidad_de_fs": 6
     }
   },
-  "1000": {
-    "BPSK": {
-      "ancho_de_banda": 1000,
-      "cantidad_de_fs": 80
-    },
-    "QPSK": {
-      "ancho_de_banda": 500,
-      "cantidad_de_fs": 40
-    },
-    "8-QAM": {
-      "ancho_de_banda": 337.5,
-      "cantidad_de_fs": 27
-    },
-    "16-QAM": {
-      "ancho_de_banda": 250,
-      "cantidad_de_fs": 20
-    },
-    "32-QAM": {
-      "ancho_de_banda": 200,
-      "cantidad_de_fs": 16
-    },
-    "64-QAM": {
-      "ancho_de_banda": 175,
-      "cantidad_de_fs": 14
-    }
-  }
 }
