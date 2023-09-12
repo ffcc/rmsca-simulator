@@ -147,6 +147,11 @@ public class SimuladorController {
         //System.out.println("Cantidad de desfragmentaciones fallidas: " + defragsF);
         System.out.println("Fin Simulación");
 
+        //int maxDistance = findMaxDistance(net);
+
+        //System.out.println("La distancia máxima entre dos nodos es: " + maxDistance);
+
+
         return responses;
     }
 
@@ -165,14 +170,24 @@ public class SimuladorController {
     }
 
     public String imprimirCaminos(List<GraphPath> kspaths, int core) {
-        List<Integer> listaCaminos = new ArrayList<>();
-        listaCaminos = obtenerCaminos(kspaths, core);
-        String path = "";
+        List<Integer> listaCaminos = obtenerCaminos(kspaths, core);
+        StringBuilder path = new StringBuilder();
+
+
+
+        path.append("PATH:");
         for (int i = 0; i < listaCaminos.size(); i++) {
-            path += " --> " + listaCaminos.get(i);
+            path.append(" ").append(listaCaminos.get(i));
+            if (i < listaCaminos.size() - 1) {
+                path.append(" -->");
+            }
         }
-        return path;
+
+        return path.toString();
     }
+
+
+
 
     @GetMapping(path= "/getTopology")
     public String getTopologia() {
@@ -240,5 +255,24 @@ public class SimuladorController {
         }
 
         return null;
+    }
+
+    private static int findMaxDistance(Graph<Integer, Link> network) {
+        int maxDistance = Integer.MIN_VALUE;
+
+        for (Integer sourceNode : network.vertexSet()) {
+            for (Integer targetNode : network.vertexSet()) {
+                if (!sourceNode.equals(targetNode)) {
+                    DijkstraShortestPath<Integer, Link> shortestPath = new DijkstraShortestPath<>(network);
+                    double distance = shortestPath.getPathWeight(sourceNode, targetNode);
+
+                    if (distance > maxDistance) {
+                        maxDistance = (int) distance;
+                    }
+                }
+            }
+        }
+
+        return maxDistance;
     }
 }
