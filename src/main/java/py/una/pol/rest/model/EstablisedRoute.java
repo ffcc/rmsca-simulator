@@ -72,4 +72,29 @@ public class EstablisedRoute {
     public int getFsIndexEnd() {
         return (this.fsIndexBegin + this.fs) - 1;
     }
+
+    public void printDemandNodes() {
+        System.out.print("PATH: " + from);
+
+        int previousNode = from;
+
+        for (Link link : path) {
+            int currentNode = link.getTo();
+            if (previousNode != currentNode) {
+                System.out.print(" --> " + currentNode);
+                previousNode = currentNode;
+            }
+        }
+
+        // Asegurarse de que el último nodo coincida con 'to' en EstablisedRoute
+        if (!path.isEmpty()) {
+            Link lastLink = path.get(path.size() - 1);
+            if (lastLink.getTo() != to) {
+                System.out.print(" --> " + to);
+            }
+        }
+
+        System.out.println();
+    }
+
 }
