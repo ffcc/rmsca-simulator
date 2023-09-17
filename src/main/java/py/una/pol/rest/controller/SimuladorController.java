@@ -30,7 +30,7 @@ public class SimuladorController {
         List<EstablisedRoute> establishedRoutes = new ArrayList<>();
         //se crea la topoligia con los parámetros seleccionados
         Graph<Integer, Link> net = createTopology(options.getTopology(), options.getCores(), options.getFsWidth(), options.getCapacity());
-        List<List<GraphPath>> kspList = new ArrayList<>();
+        List<List<GraphPath<Integer, Link>>> kspList = new ArrayList<>();
         List<BFR> listaBfr;
 
         int demandsQ = 0, blocksQ = 0;
@@ -43,7 +43,7 @@ public class SimuladorController {
         KShortestSimplePaths ksp = new KShortestSimplePaths(net);
         DijkstraShortestPath<Integer, Link> djkt = new DijkstraShortestPath<>(net);
         //colector que va a almacenar los k caminos mas cortos
-        List<GraphPath> kspaths = new ArrayList<>();
+        List<GraphPath<Integer, Link>> kspaths = new ArrayList<>();
         int core = 0;
 
 
@@ -58,7 +58,7 @@ public class SimuladorController {
             double distance = shortestPath.getWeight();
 
             demandDistances.add(new DemandDistancePair(demand, distance, ""));
-        }
+        }PATH:
 
         // Ordenar en función del parámetro ascendente, descendente y aleatorio seria como viene
         if (options.getSortingDemands().equalsIgnoreCase("ASC")) {
@@ -75,18 +75,26 @@ public class SimuladorController {
             System.out.println("-------PROCESANDO NUEVA DEMANDA----------");
             response.setNroDemanda(demandsQ);
             response.setCantRutasActivas(establishedRoutes.size());
-            System.out.println("Demanda: " + response.getNroDemanda() + ", Cantidad de rutas en uso: " + establishedRoutes.size());
+            System.out.println("Demanda: " + response.getNroDemanda() + ", Origen: " + demand.getDemand().getSource() + ", Destino: "+ demand.getDemand().getDestination() +", Cantidad de rutas en uso: " + establishedRoutes.size());
             demandsQ++;
             kspaths.clear();
 
             //se ejecuta dijkstra - ksp como sortest-Algorithm
-            if(options.getSortestAlg().equals("Dijkstra")) {
-                //retorna el camino mas corto de fuente a destino
-                kspaths.add(djkt.getPath(demand.getDemand().getSource(), demand.getDemand().getDestination()));
+            if (options.getSortestAlg().equals("Dijkstra")) {
+                // Retorna el camino más corto de fuente a destino
+                GraphPath<Integer, Link> shortestPath = djkt.getPath(demand.getDemand().getSource(), demand.getDemand().getDestination());
+                // Agrega el camino a la lista kspaths
+                kspaths.add(shortestPath);
             } else {
-                //retorna los 5 caminos mas cortos de fuente a destino
-                kspaths = ksp.getPaths(demand.getDemand().getSource(), demand.getDemand().getDestination(), 5);
+                // Retorna los 5 caminos más cortos de fuente a destino
+                List<GraphPath<Integer, Link>> kShortestPaths = ksp.getPaths(demand.getDemand().getSource(), demand.getDemand().getDestination(), 5);
+                for (GraphPath<Integer, Link> path : kShortestPaths) {
+                    // Agrega cada camino a la lista kspaths
+                    kspaths.add(path);
+                }
             }
+
+
 
             //Calcular la modulación para una demanda con una distancia específica
             ModulationCalculator modulationCalculator = new ModulationCalculator();
@@ -120,12 +128,10 @@ public class SimuladorController {
                         establishedRoutes.add((EstablisedRoute) establisedRoute);
                         kspList.add(kspaths);
                         Utils.assignFs((EstablisedRoute) establisedRoute, core);
-                        //response.setOrigen(demand.getSource());
-                        //response.setDestino(demand.getDestination());
-                        //response.setFs(demand.getFs());
                         response.setFsIndexBegin(((EstablisedRoute) establisedRoute).getFsIndexBegin());
-                        response.setPath(obtenerCaminos(kspaths, core));
-                        System.out.println("PATH: " + imprimirCaminos(kspaths, core));
+                        //imprimimos el path de origen a destino
+                        ((EstablisedRoute) establisedRoute).printDemandNodes();
+
                         //System.out.println("Ruta establecida: { origen: " + demand.getSource() + " destino: " + demand.getDestination() + " en el Core: " + core + " utilizando " + demand.getFs() + " FS [ " + ((EstablisedRoute) establisedRoute).getFsIndexBegin() + " - "+ ((EstablisedRoute) establisedRoute).getFsIndexEnd() + "] } ");
                         System.out.println("Imprimiendo BFR: " + Algorithms.BFR(net, options.getCapacity()));
                     }
@@ -153,61 +159,6 @@ public class SimuladorController {
 
 
         return responses;
-    }
-
-    //para imprimir las rutas que se eligio de origen a destino
-    public List<Integer> obtenerCaminos(List<GraphPath> kspaths, int core){
-        List<Integer> listaCaminos = new ArrayList<>();
-        for (GraphPath caminos : kspaths) {
-            for (Object camino: caminos.getEdgeList()) {
-                Link link = (Link) camino;
-                //System.out.println("Caminos: De " + link.getFrom() + " a " + link.getTo());
-                listaCaminos.add(link.getTo());
-                listaCaminos.add(link.getFrom());
-            }
-        }
-        return listaCaminos;
-    }
-
-    public String imprimirCaminos(List<GraphPath> kspaths, int core) {
-        List<Integer> listaCaminos = obtenerCaminos(kspaths, core);
-        StringBuilder path = new StringBuilder();
-
-
-
-        path.append("PATH:");
-        for (int i = 0; i < listaCaminos.size(); i++) {
-            path.append(" ").append(listaCaminos.get(i));
-            if (i < listaCaminos.size() - 1) {
-                path.append(" -->");
-            }
-        }
-
-        return path.toString();
-    }
-
-
-
-
-    @GetMapping(path= "/getTopology")
-    public String getTopologia() {
-        /* Graph g = createTopology2("nsfnet.json",4,12.5,350);
-        KShortestSimplePaths ksp = new KShortestSimplePaths(g);
-
-            //k caminos más cortos entre source y destination de la demanda actual
-            List<GraphPath> kspaths = ksp.getPaths(2, 6, 5);
-            comprobarKspVocConfia(kspaths);
-        DOTExporter<Integer, Link> exporter =
-                new DOTExporter<>(v -> v.toString().replace('.', '_'));
-        exporter.setVertexAttributeProvider((v) -> {
-            Map<String, Attribute> map = new LinkedHashMap<>();
-            map.put("label", DefaultAttribute.createAttribute(v.toString()));
-            return map;
-        });
-        Writer writer = new StringWriter();
-        exporter.exportGraph(g, writer);
-        return writer.toString();*/
-        return "x";
     }
 
     private int getCore(int limit, boolean [] tested){

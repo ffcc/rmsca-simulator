@@ -58,7 +58,7 @@ public class Algorithms {
                         }
                         //si la cantidad de slots libres == slots que necesita la demanda
                         if(count == demand.getFs()){
-                            System.out.println("Existe espacio en el core: " + core + " de FS: " + i + " a " + j + " cantidad FS requerida: " + demand.getFs());
+                            //System.out.println("Existe espacio en el core: " + core + " de FS: " + i + " a " + j + " cantidad FS requerida: " + demand.getFs());
                             kspPlaced.add(kspaths.get(k));
                             break capacity;
                         }
