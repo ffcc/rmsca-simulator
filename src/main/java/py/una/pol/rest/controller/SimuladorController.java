@@ -136,7 +136,7 @@ public class SimuladorController {
                         response.setFsIndexBegin(((EstablisedRoute) establisedRoute).getFsIndexBegin());
                         //imprimimos el path de origen a destino
                         ((EstablisedRoute) establisedRoute).printDemandNodes();
-
+                        response.setPath(((EstablisedRoute) establisedRoute).printDemandNodes());
                         //System.out.println("Ruta establecida: { origen: " + demand.getSource() + " destino: " + demand.getDestination() + " en el Core: " + core + " utilizando " + demand.getFs() + " FS [ " + ((EstablisedRoute) establisedRoute).getFsIndexBegin() + " - "+ ((EstablisedRoute) establisedRoute).getFsIndexEnd() + "] } ");
                         System.out.println("Imprimiendo BFR: " + Algorithms.BFR(net, options.getCapacity()));
                     }
