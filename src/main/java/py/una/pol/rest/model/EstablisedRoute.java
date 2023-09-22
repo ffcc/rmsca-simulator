@@ -73,15 +73,15 @@ public class EstablisedRoute {
         return (this.fsIndexBegin + this.fs) - 1;
     }
 
-    public void printDemandNodes() {
-        System.out.print("PATH: " + from);
+    public String printDemandNodes() {
+        StringBuilder pathString = new StringBuilder("PATH: " + from);
 
         int previousNode = from;
 
         for (Link link : path) {
             int currentNode = link.getTo();
             if (previousNode != currentNode) {
-                System.out.print(" --> " + currentNode);
+                pathString.append(" --> ").append(currentNode);
                 previousNode = currentNode;
             }
         }
@@ -90,11 +90,12 @@ public class EstablisedRoute {
         if (!path.isEmpty()) {
             Link lastLink = path.get(path.size() - 1);
             if (lastLink.getTo() != to) {
-                System.out.print(" --> " + to);
+                pathString.append(" --> ").append(to);
             }
         }
 
-        System.out.println();
+        System.out.println(pathString.toString()); // Imprime el camino
+        return pathString.toString(); // Retorna el camino como una cadena
     }
 
 }

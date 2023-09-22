@@ -10,7 +10,9 @@ public class Response {
     private int core;
     private int fsIndexBegin;
     private int fs;
-    private List<Integer> path;
+    private String path;
+    private int bitrate;
+    private String modulation;
     private boolean block;
     private int slotBlock;
     private int MSI;
@@ -71,12 +73,28 @@ public class Response {
         this.fs = fs;
     }
 
-    public List<Integer> getPath() {
+    public String getPath() {
         return path;
     }
 
-    public void setPath(List<Integer> path) {
+    public void setPath(String path) {
         this.path = path;
+    }
+
+    public int getBitrate() {
+        return bitrate;
+    }
+
+    public void setBitrate(int bitrate) {
+        this.bitrate = bitrate;
+    }
+
+    public String getModulation() {
+        return modulation;
+    }
+
+    public void setModulation(String modulation) {
+        this.modulation = modulation;
     }
 
     public boolean isBlock() {
@@ -87,19 +105,19 @@ public class Response {
         this.block = block;
     }
 
-    public int getMSI() {
-        return MSI;
-    }
-
-    public void setMSI(int MSI) {
-        this.MSI = MSI;
-    }
-
     public int getSlotBlock() {
         return slotBlock;
     }
 
     public void setSlotBlock(int slotBlock) {
         this.slotBlock = slotBlock;
+    }
+
+    public int getMSI() {
+        return MSI;
+    }
+
+    public void setMSI(int MSI) {
+        this.MSI = MSI;
     }
 }

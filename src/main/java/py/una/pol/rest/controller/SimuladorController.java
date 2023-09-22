@@ -14,6 +14,8 @@ import py.una.pol.rest.model.*;
 import py.una.pol.utils.ResourceReader;
 import py.una.pol.utils.Utils;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
@@ -99,6 +101,9 @@ public class SimuladorController {
             //Calcular la modulación para una demanda con una distancia específica
             ModulationCalculator modulationCalculator = new ModulationCalculator();
             modulationCalculator.calculateFS(demand);
+            response.setBitrate(demand.getDemand().getBitRate());
+            response.setModulation(demand.getModulation());
+            response.setFs(demand.getDemand().getFs());
 
             //busqueda de caminos disponibles, para establecer los enlaces
             try {
@@ -152,6 +157,10 @@ public class SimuladorController {
         //System.out.println("Cantidad de defragmentaciones: " + defragsQ);
         //System.out.println("Cantidad de desfragmentaciones fallidas: " + defragsF);
         System.out.println("Fin Simulación");
+
+        // Llama al método para escribir en el archivo CSV
+        writeResponsesToCSV(responses);
+
 
         //int maxDistance = findMaxDistance(net);
 
@@ -225,5 +234,37 @@ public class SimuladorController {
         }
 
         return maxDistance;
+    }
+
+    public static void writeResponsesToCSV(List<Response> responses) {
+        String filePath = "src\\main\\resources\\salida\\salida.csv"; // Ruta del archivo CSV en la carpeta resources\salida
+
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
+            // Escribir encabezados
+            writer.write("nroDemanda,cantRutasActivas,origen,destino,core,fsIndexBegin,fs,path,bitrate,modulation,block,slotBlock,MSI");
+            writer.newLine();
+
+            // Escribir datos de cada respuesta
+            for (Response response : responses) {
+                writer.write(response.getNroDemanda() + "," +
+                        response.getCantRutasActivas() + "," +
+                        response.getOrigen() + "," +
+                        response.getDestino() + "," +
+                        response.getCore() + "," +
+                        response.getFsIndexBegin() + "," +
+                        response.getFs() + "," +
+                        response.getPath() + "," +
+                        response.getBitrate() + "," +
+                        response.getModulation() + "," +
+                        response.isBlock() + "," +
+                        response.getSlotBlock() + "," +
+                        response.getMSI());
+                writer.newLine();
+            }
+
+            System.out.println("Los datos se han guardado en el archivo CSV: " + filePath);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
