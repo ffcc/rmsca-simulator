@@ -1,11 +1,11 @@
 nroDemanda,cantRutasActivas,origen,destino,core,fsIndexBegin,fs,path,bitrate,modulation,block,slotBlock,MSI
-0,0,0,0,0,0,7,PATH: 7 --> 4,400,32-QAM,false,0,0
-1,1,0,0,0,0,3,PATH: 9 --> 6 --> 4,100,8-QAM,false,0,0
-2,2,0,0,0,3,3,PATH: 9 --> 6 --> 4,100,8-QAM,false,0,0
-3,3,0,0,0,0,8,PATH: 5 --> 8,400,16-QAM,false,0,0
-4,4,0,0,0,0,3,PATH: 0 --> 1 --> 6,100,8-QAM,false,0,0
-5,5,0,0,0,6,2,PATH: 6 --> 9 --> 8,40,8-QAM,false,0,0
-6,6,0,0,0,0,2,PATH: 8 --> 9,100,16-QAM,false,0,0
-7,7,0,0,0,8,2,PATH: 8 --> 9 --> 6 --> 4,40,8-QAM,false,0,0
-8,8,0,0,0,0,8,PATH: 0 --> 3 --> 5,400,16-QAM,false,0,0
-9,9,0,0,0,8,1,PATH: 8 --> 5,40,16-QAM,false,0,0
+0,0,0,4,0,0,2,PATH: 0 --> 2 --> 4,40,8-QAM,false,0,0
+1,1,1,6,0,0,3,PATH: 1 --> 6,100,8-QAM,false,0,0
+2,2,2,6,0,0,2,PATH: 2 --> 5 --> 7 --> 6,40,8-QAM,false,0,0
+3,3,3,1,0,0,2,PATH: 3 --> 1,40,8-QAM,false,0,0
+4,4,7,8,0,0,3,PATH: 7 --> 9 --> 8,100,8-QAM,false,0,0
+5,5,8,6,0,3,2,PATH: 8 --> 9 --> 6,40,8-QAM,false,0,0
+6,6,6,3,0,2,4,PATH: 6 --> 4 --> 2 --> 3,100,QPSK,false,0,0
+7,7,1,3,0,6,2,PATH: 1 --> 3,40,8-QAM,false,0,0
+8,8,2,0,0,0,8,null,400,16-QAM,true,0,0
+9,8,1,0,0,2,1,PATH: 1 --> 0,40,16-QAM,false,0,0

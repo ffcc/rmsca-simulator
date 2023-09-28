@@ -74,9 +74,12 @@ public class SimuladorController {
         for(DemandDistancePair demand : demandDistances) {
             Response response = new Response();
             //boolean blocked = false;
+
             System.out.println("-------PROCESANDO NUEVA DEMANDA----------");
             response.setNroDemanda(demandsQ);
             response.setCantRutasActivas(establishedRoutes.size());
+            response.setOrigen(demand.getDemand().getSource());
+            response.setDestino(demand.getDemand().getDestination());
             System.out.println("Demanda: " + response.getNroDemanda() + ", Origen: " + demand.getDemand().getSource() + ", Destino: "+ demand.getDemand().getDestination() +", Cantidad de rutas en uso: " + establishedRoutes.size());
             demandsQ++;
             kspaths.clear();
@@ -95,7 +98,6 @@ public class SimuladorController {
                     kspaths.add(path);
                 }
             }
-
 
 
             //Calcular la modulación para una demanda con una distancia específica
@@ -133,12 +135,16 @@ public class SimuladorController {
                         establishedRoutes.add((EstablisedRoute) establisedRoute);
                         kspList.add(kspaths);
                         Utils.assignFs((EstablisedRoute) establisedRoute, core);
+                        response.setCore(((EstablisedRoute) establisedRoute).getCore());
                         response.setFsIndexBegin(((EstablisedRoute) establisedRoute).getFsIndexBegin());
                         //imprimimos el path de origen a destino
-                        ((EstablisedRoute) establisedRoute).printDemandNodes();
+                        //((EstablisedRoute) establisedRoute).printDemandNodes();
                         response.setPath(((EstablisedRoute) establisedRoute).printDemandNodes());
                         //System.out.println("Ruta establecida: { origen: " + demand.getSource() + " destino: " + demand.getDestination() + " en el Core: " + core + " utilizando " + demand.getFs() + " FS [ " + ((EstablisedRoute) establisedRoute).getFsIndexBegin() + " - "+ ((EstablisedRoute) establisedRoute).getFsIndexEnd() + "] } ");
                         System.out.println("Imprimiendo BFR: " + Algorithms.BFR(net, options.getCapacity()));
+
+                        printFSStatus(options, establishedRoutes); // Llama al método para imprimir el estado de ocupación de los FS en cada núcleo
+
                     }
                     if (establisedRoute != null || demand.getDemand().getBlocked())
                         break;
@@ -160,6 +166,7 @@ public class SimuladorController {
 
         // Llama al método para escribir en el archivo CSV
         writeResponsesToCSV(responses);
+
 
 
         //int maxDistance = findMaxDistance(net);
@@ -267,4 +274,26 @@ public class SimuladorController {
             e.printStackTrace();
         }
     }
+
+    private void printFSStatus(Options options, List<EstablisedRoute> establishedRoutes) {
+        for (int coreIndex = 0; coreIndex < options.getCores(); coreIndex++) {
+            boolean[] coreSlots = new boolean[options.getCapacity()];
+            Arrays.fill(coreSlots, false);
+
+            for (EstablisedRoute route : establishedRoutes) {
+                if (route.getCore() == coreIndex) {
+                    for (int fsIndex = route.getFsIndexBegin(); fsIndex <= route.getFsIndexEnd(); fsIndex++) {
+                        coreSlots[fsIndex] = true;
+                    }
+                }
+            }
+
+            System.out.print("Núcleo " + coreIndex + ": ");
+            for (int fsIndex = 0; fsIndex < options.getCapacity(); fsIndex++) {
+                System.out.print(coreSlots[fsIndex] ? "█" : "░");
+            }
+            System.out.println();
+        }
+    }
+
 }
