@@ -46,6 +46,11 @@
 			<artifactId>json</artifactId>
 			<version>20210307</version> <!-- Update this version to the latest available -->
 		</dependency>
+		<dependency>
+			<groupId>com.opencsv</groupId>
+			<artifactId>opencsv</artifactId>
+			<version>5.4</version>
+		</dependency>
 
 	</dependencies>
 

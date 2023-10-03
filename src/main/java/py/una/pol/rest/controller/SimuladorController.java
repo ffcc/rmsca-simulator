@@ -141,9 +141,8 @@ public class SimuladorController {
                         //((EstablisedRoute) establisedRoute).printDemandNodes();
                         response.setPath(((EstablisedRoute) establisedRoute).printDemandNodes());
                         //System.out.println("Ruta establecida: { origen: " + demand.getSource() + " destino: " + demand.getDestination() + " en el Core: " + core + " utilizando " + demand.getFs() + " FS [ " + ((EstablisedRoute) establisedRoute).getFsIndexBegin() + " - "+ ((EstablisedRoute) establisedRoute).getFsIndexEnd() + "] } ");
-                        System.out.println("Imprimiendo BFR: " + Algorithms.BFR(net, options.getCapacity()));
+                        System.out.println("Imprimiendo BFR de la Red: " + Algorithms.BFR(net, options.getCapacity()));
 
-                        printFSStatus(options, establishedRoutes); // Llama al método para imprimir el estado de ocupación de los FS en cada núcleo
 
                     }
                     if (establisedRoute != null || demand.getDemand().getBlocked())
@@ -167,6 +166,7 @@ public class SimuladorController {
         // Llama al método para escribir en el archivo CSV
         writeResponsesToCSV(responses);
 
+        printFSStatus(options, establishedRoutes); // Llama al método para imprimir el estado de ocupación de los FS en cada núcleo
 
 
         //int maxDistance = findMaxDistance(net);

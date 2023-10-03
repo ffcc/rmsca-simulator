@@ -22,8 +22,13 @@ public class Algorithms {
         int begin, count;
         boolean  so[] = new boolean[capacity]; //Representa los fs ocupados del espectro de todos los enlaces.
         List<GraphPath> kspPlaced = new ArrayList<>();
-        Map<String, Integer> bestKspSlot = new HashMap<>();
+        GraphPath bestKspSlot = null;
+        Map<String, Integer> bestKspSlot2 = new HashMap<>();
+
+        List<Integer> fsIndexBeginList = new ArrayList<>();
         int k = 0;
+        double minBFR = Double.MAX_VALUE; // Inicializa el valor mínimo de BFR con un valor alto
+
         while (k < kspaths.size() && kspaths.get(k) != null){
             Arrays.fill(so, false);//Se inicializa todo el espectro como libre
             GraphPath ksp = kspaths.get(k);
@@ -59,6 +64,7 @@ public class Algorithms {
                         //si la cantidad de slots libres == slots que necesita la demanda
                         if(count == demand.getFs()){
                             //System.out.println("Existe espacio en el core: " + core + " de FS: " + i + " a " + j + " cantidad FS requerida: " + demand.getFs());
+                            fsIndexBeginList.add(i); // Agrega fsIndexBegin a la lista
                             kspPlaced.add(kspaths.get(k));
                             break capacity;
                         }
@@ -73,9 +79,39 @@ public class Algorithms {
         if(kspPlaced.size() == 0)
             return null;
         //Ksp ubidados ahora se debe elegir el mejor
-        bestKspSlot = Utils.countCuts(graph, kspPlaced, capacity, core, demand.getFs());
-        EstablisedRoute establisedRoute = new EstablisedRoute((kspPlaced.get(bestKspSlot.get("ksp")).getEdgeList()), bestKspSlot.get("slot"), demand.getFs(), demand.getSource(), demand.getDestination(), core);
-        return establisedRoute;
+        bestKspSlot2 = Utils.countCuts(graph, kspPlaced, capacity, core, demand.getFs());
+        EstablisedRoute establisedRoute2 = new EstablisedRoute((kspPlaced.get(bestKspSlot2.get("ksp")).getEdgeList()), bestKspSlot2.get("slot"), demand.getFs(), demand.getSource(), demand.getDestination(), core);
+
+        for (GraphPath gPath : kspPlaced) {
+            double currentBFR = BFRForPath(gPath, capacity); // Calcula el BFR para el GraphPath actual
+            System.out.println("Imprimiendo BFR: " + currentBFR);
+
+            // Compara el BFR actual con el valor mínimo
+            if (currentBFR < minBFR) {
+                minBFR = currentBFR; // Actualiza el valor mínimo
+                bestKspSlot = gPath; // Guarda el GraphPath correspondiente al valor mínimo
+            }
+        }
+
+        if (bestKspSlot != null) {
+            int bestIndex = kspPlaced.indexOf(bestKspSlot); // Obtiene el índice del mejor kspPlaced
+            int bestFsIndexBegin = fsIndexBeginList.get(bestIndex); // Obtiene fsIndexBegin correspondiente al mejor kspPlaced
+
+            // Crea una instancia de EstablishedRoute con los valores adecuados
+            EstablisedRoute establishedRoute = new EstablisedRoute(
+                    bestKspSlot.getEdgeList(),
+                    bestFsIndexBegin,
+                    demand.getFs(),
+                    demand.getSource(),
+                    demand.getDestination(),
+                    core
+            );
+
+            // Ahora, 'establishedRoute' contiene los valores adecuados, incluyendo 'fsIndexBegin'.
+            return establishedRoute;
+        } else {
+            return null; // Devuelve null si no se encontró una ruta adecuada
+        }
     }
 
     public static EstablisedRoute faca(Graph graph, List<GraphPath> kspaths, Demand demand, int capacity, int core){ // fragmentation aware - congestion avoidance
@@ -904,6 +940,17 @@ public class Algorithms {
             }
         }
         return shf / links.size() * links.get(0).getCores().size();
+    }
+
+    public static double BFRForPath(GraphPath gPath, int capacity) { // Cambia el parámetro de Graph a GraphPath
+        double BFRLinks = 0;
+        int cores;
+
+        List<Link> links = new ArrayList<>();
+        links.addAll(gPath.getEdgeList()); // Obtiene la lista de enlaces desde el GraphPath
+        cores = links.get(0).getCores().size();
+        BFRLinks = BFRLinks(links, capacity); // Llama a la función BFRLinks con la lista de enlaces
+        return BFRLinks / gPath.getEdgeList().size() * cores; // Calcula el BFR usando el GraphPath
     }
 
 }
