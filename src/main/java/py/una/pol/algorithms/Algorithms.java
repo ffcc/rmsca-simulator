@@ -3,6 +3,7 @@ package py.una.pol.algorithms;
 import org.jgrapht.Graph;
 import org.jgrapht.GraphPath;
 import org.jgrapht.alg.shortestpath.KShortestSimplePaths;
+import org.jgrapht.graph.DefaultWeightedEdge;
 import org.jgrapht.graph.GraphWalk;
 import py.una.pol.rest.model.*;
 import py.una.pol.utils.Utils;
@@ -85,13 +86,15 @@ public class Algorithms {
         for (GraphPath gPath : kspPlaced) {
             double currentBFR = BFRForPath(gPath, capacity); // Calcula el BFR para el GraphPath actual
             System.out.println("Imprimiendo BFR: " + currentBFR);
-
             // Compara el BFR actual con el valor mínimo
             if (currentBFR < minBFR) {
                 minBFR = currentBFR; // Actualiza el valor mínimo
                 bestKspSlot = gPath; // Guarda el GraphPath correspondiente al valor mínimo
             }
         }
+
+        imprimirCaminos(kspPlaced);
+
 
         if (bestKspSlot != null) {
             int bestIndex = kspPlaced.indexOf(bestKspSlot); // Obtiene el índice del mejor kspPlaced
@@ -951,6 +954,22 @@ public class Algorithms {
         cores = links.get(0).getCores().size();
         BFRLinks = BFRLinks(links, capacity); // Llama a la función BFRLinks con la lista de enlaces
         return BFRLinks / gPath.getEdgeList().size() * cores; // Calcula el BFR usando el GraphPath
+    }
+
+    // Método para imprimir los caminos en kspPlaced
+    private static void imprimirCaminos(List<GraphPath> kspPlaced) {
+        for (int i = 0; i < kspPlaced.size(); i++) {
+            GraphPath<Integer, DefaultWeightedEdge> path = kspPlaced.get(i);
+            List<Integer> vertices = path.getVertexList();
+            System.out.print("Camino " + (i + 1) + ": ");
+            for (int j = 0; j < vertices.size(); j++) {
+                System.out.print(vertices.get(j));
+                if (j < vertices.size() - 1) {
+                    System.out.print(" --> ");
+                }
+            }
+            System.out.println();
+        }
     }
 
 }
