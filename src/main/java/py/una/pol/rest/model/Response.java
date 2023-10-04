@@ -17,6 +17,8 @@ public class Response {
     private int slotBlock;
     private int MSI;
 
+    private int fsMax;
+
     public int getNroDemanda() {
         return nroDemanda;
     }
@@ -119,5 +121,13 @@ public class Response {
 
     public void setMSI(int MSI) {
         this.MSI = MSI;
+    }
+
+    public int getFsMax() {
+        return fsMax;
+    }
+
+    public void setFsMax(int fsMax) {
+        this.fsMax = fsMax;
     }
 }

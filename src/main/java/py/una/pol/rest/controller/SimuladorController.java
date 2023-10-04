@@ -137,6 +137,7 @@ public class SimuladorController {
                         Utils.assignFs((EstablisedRoute) establisedRoute, core);
                         response.setCore(((EstablisedRoute) establisedRoute).getCore());
                         response.setFsIndexBegin(((EstablisedRoute) establisedRoute).getFsIndexBegin());
+                        response.setFsMax(((EstablisedRoute) establisedRoute).getFsMax());
                         //imprimimos el path de origen a destino
                         //((EstablisedRoute) establisedRoute).printDemandNodes();
                         response.setPath(((EstablisedRoute) establisedRoute).printDemandNodes());
@@ -166,9 +167,9 @@ public class SimuladorController {
         // Llama al método para escribir en el archivo CSV
         writeResponsesToCSV(responses);
 
-        //printFSStatus(options, establishedRoutes); // Llama al método para imprimir el estado de ocupación de los FS en cada núcleo
+        printFSStatus(options, establishedRoutes); // Llama al método para imprimir el estado de ocupación de los FS en cada núcleo
 
-        System.out.println(obtenerDatosParaNucleo(responses, options.getCapacity()));
+        //System.out.println(obtenerDatosParaNucleo(responses, options.getCapacity()));
 
 
         //int maxDistance = findMaxDistance(net);

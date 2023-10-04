@@ -9,6 +9,7 @@ public class EstablisedRoute {
     private int to;
     private List<Link> path;
     private int core;
+    private int fsMax;
 
     public EstablisedRoute() {
     }
@@ -67,6 +68,10 @@ public class EstablisedRoute {
 
     public void setCore(int core) {
         this.core = core;
+    }
+
+    public int getFsMax() {
+        return this.fsMax = this.getFsIndexBegin() + this.getFs();
     }
 
     public int getFsIndexEnd() {
