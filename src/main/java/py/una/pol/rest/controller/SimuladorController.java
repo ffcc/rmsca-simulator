@@ -166,7 +166,9 @@ public class SimuladorController {
         // Llama al método para escribir en el archivo CSV
         writeResponsesToCSV(responses);
 
-        printFSStatus(options, establishedRoutes); // Llama al método para imprimir el estado de ocupación de los FS en cada núcleo
+        //printFSStatus(options, establishedRoutes); // Llama al método para imprimir el estado de ocupación de los FS en cada núcleo
+
+        System.out.println(obtenerDatosParaNucleo(responses, options.getCapacity()));
 
 
         //int maxDistance = findMaxDistance(net);
@@ -295,5 +297,64 @@ public class SimuladorController {
             System.out.println();
         }
     }
+
+    private String obtenerDatosParaNucleo(List<Response> responses, int capacity) {
+        StringBuilder datos = new StringBuilder();
+        for (Response response : responses) {
+            datos.append("- Núcleo ").append(response.getCore()).append("\n");
+            datos.append("  - Camino ").append(response.getOrigen()).append(" --> ").append(response.getDestino()).append(":\n");
+            // Agregar los detalles de cada enlace excluyendo el atributo "core"
+            datos.append("    - Número de Demanda: ").append(response.getNroDemanda()).append("\n");
+            // Calcular y agregar la representación de la barra de utilización de FS con capacidad
+            String barraFS = generarBarraFS(response.getFsIndexBegin(), response.getFs(), capacity);
+            datos.append("    - Barra de utilización de FS: ").append(barraFS).append("\n");
+            // Calcular y agregar la representación de puntos de FS
+            String puntosFS = generarPuntosFS(response.getFsIndexBegin(), response.getFs());
+            datos.append("    - Puntos de FS: ").append(puntosFS).append("\n");
+            // Excluir el atributo "core" del resultado
+            // Ejemplo:
+            // datos.append("    - Bitrate: ").append(response.getBitrate()).append("\n");
+        }
+        return datos.toString();
+    }
+
+
+
+
+    private String generarPuntosFS(int fsIndexBegin, int fs) {
+        StringBuilder puntos = new StringBuilder("[");
+        for (int i = 0; i < fsIndexBegin; i++) {
+            puntos.append(". "); // Punto para FS no ocupados
+        }
+        for (int i = 0; i < fs; i++) {
+            puntos.append("█ "); // Carácter █ para FS ocupados
+        }
+        puntos.append("]");
+        return puntos.toString();
+    }
+
+    private String generarBarraFS(int fsIndexBegin, int fs, int capacity) {
+        StringBuilder barra = new StringBuilder("[");
+        int fsEnd = fsIndexBegin + fs;
+
+        for (int i = 0; i < 10; i++) { // Siempre muestra 10 ranuras
+            if (i >= fsIndexBegin && i < fsEnd) {
+                if (i - fsIndexBegin < capacity) {
+                    barra.append("█ "); // Carácter █ para FS ocupados dentro de la capacidad
+                } else {
+                    barra.append(". "); // Punto para FS ocupados fuera de la capacidad
+                }
+            } else {
+                barra.append("░ "); // Punto para FS no ocupados
+            }
+        }
+
+        barra.append("]");
+        return barra.toString();
+    }
+
+
+
+
 
 }
