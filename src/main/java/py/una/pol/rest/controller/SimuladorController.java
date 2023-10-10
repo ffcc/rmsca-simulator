@@ -26,27 +26,25 @@ import java.util.*;
 @RequestMapping("/api/v1")
 public class SimuladorController {
 
-    @PostMapping(path= "/simular")
+    @PostMapping(path = "/simular")
     public List<Response> simular(@RequestBody Options options) throws Exception {
         List<Demand> demands;
         List<EstablisedRoute> establishedRoutes = new ArrayList<>();
         //se crea la topoligia con los parámetros seleccionados
         Graph<Integer, Link> net = createTopology(options.getTopology(), options.getCores(), options.getFsWidth(), options.getCapacity());
         List<List<GraphPath<Integer, Link>>> kspList = new ArrayList<>();
-        List<BFR> listaBfr;
-
+        List<BFR> listaBfr = new ArrayList<>();
+        int fsMax = 0;
         int demandsQ = 0, blocksQ = 0;
 
         //se generan aleatoriamente las demandas, de acuerdo a la cantidad proporcionadas por parámetro
-        demands = Utils.generateDemands(options.getDemandsQuantity(), options.getFsRangeMin(),
-                options.getFsRangeMax(), net.vertexSet().size());
+        demands = Utils.generateDemands(options.getDemandsQuantity(), options.getFsRangeMin(), options.getFsRangeMax(), net.vertexSet().size());
 
         //se carga la red en ksp - dijkstra, con todos los nodos, pares de nodos
         KShortestSimplePaths ksp = new KShortestSimplePaths(net);
         DijkstraShortestPath<Integer, Link> djkt = new DijkstraShortestPath<>(net);
         //colector que va a almacenar los k caminos mas cortos
         List<GraphPath<Integer, Link>> kspaths = new ArrayList<>();
-        int core = 0;
 
 
         //ORDENAMOS LAS DEMANDAS ASCENDENTE - DESCENDENTE - ALEATORIO NO HACER NADA
@@ -60,7 +58,8 @@ public class SimuladorController {
             double distance = shortestPath.getWeight();
 
             demandDistances.add(new DemandDistancePair(demand, distance, ""));
-        }PATH:
+        }
+        PATH:
 
         // Ordenar en función del parámetro ascendente, descendente y aleatorio seria como viene
         if (options.getSortingDemands().equalsIgnoreCase("ASC")) {
@@ -71,7 +70,7 @@ public class SimuladorController {
 
         //Procesamos las demandas
         List<Response> responses = new ArrayList<>();
-        for(DemandDistancePair demand : demandDistances) {
+        for (DemandDistancePair demand : demandDistances) {
             Response response = new Response();
             //boolean blocked = false;
 
@@ -80,7 +79,7 @@ public class SimuladorController {
             response.setCantRutasActivas(establishedRoutes.size());
             response.setOrigen(demand.getDemand().getSource());
             response.setDestino(demand.getDemand().getDestination());
-            System.out.println("Demanda: " + response.getNroDemanda() + ", Origen: " + demand.getDemand().getSource() + ", Destino: "+ demand.getDemand().getDestination() +", Cantidad de rutas en uso: " + establishedRoutes.size());
+            System.out.println("Demanda: " + response.getNroDemanda() + ", Origen: " + demand.getDemand().getSource() + ", Destino: " + demand.getDemand().getDestination() + ", Cantidad de rutas en uso: " + establishedRoutes.size());
             demandsQ++;
             kspaths.clear();
 
@@ -99,7 +98,6 @@ public class SimuladorController {
                 }
             }
 
-
             //Calcular la modulación para una demanda con una distancia específica
             ModulationCalculator modulationCalculator = new ModulationCalculator();
             modulationCalculator.calculateFS(demand);
@@ -109,32 +107,39 @@ public class SimuladorController {
 
             //busqueda de caminos disponibles, para establecer los enlaces
             try {
-                //bandera para ir pintando los nucleos visitados
-                boolean[] tested = new boolean[options.getCores()];
-                Arrays.fill(tested, false);
                 while (true) {
-                    core = getCore(options.getCores(), tested);
-                    //response.setCore(core);
-                    Class<?>[] paramTypes = {Graph.class, List.class, Demand.class, int.class, int.class};
-                    Method method = Algorithms.class.getMethod(options.getRoutingAlg(), paramTypes);
-                    Object establisedRoute = method.invoke(this, net, kspaths, demand.getDemand(), options.getCapacity(), core);
-
-                    if (establisedRoute == null) {
-                        tested[core] = true;//Se marca el core probado
-                        if (!Arrays.asList(tested).contains(false)) {//Se ve si ya se probaron todos los cores
-                            response.setBlock(true);
-                            System.out.println("Demanda " + demandsQ + " BLOQUEADA ");
-                            //response.setSlotBlock(demand.getFs());
-                            //blocked = true;
-                            demand.getDemand().setBlocked(true);
-                            //slotsBlocked += demand.getFs();
-                            blocksQ++;
+                    listaBfr = new ArrayList<>();
+                    //iteramos los mejores caminos de origen a destino
+                    for (GraphPath<Integer, Link> path : kspaths) {
+                        if (fsMax < demand.getDemand().getFs()) {
+                            fsMax = demand.getDemand().getFs();
                         }
-                    } else {
-                        //Ruta establecida
+
+                        //iteramos los nucleos
+                        for (int i = 0; i < options.getCores(); i++) {
+                            //cumple principios de eon
+                            //calcular bfr
+                            listaBfr.add(Algorithms.customRsa(net, path, demand.getDemand(), fsMax, i));
+                        }
+                    }
+
+                    // Filtra los valores nulos de la lista de BFR
+                    listaBfr.removeIf(Objects::isNull);
+
+                    if (!listaBfr.isEmpty()) {
+                        // Ordena la lista de BFR en orden ascendente
+                        listaBfr.sort(Comparator.comparingDouble(BFR::getValue));
+
+                        // Obtén el BFR más pequeño (el primero en la lista)
+                        BFR mejorBfr = listaBfr.get(0);
+
+                        // Agregar aqui si cumple con el umbral de la diafonia
+
+
+                        EstablisedRoute establisedRoute = new EstablisedRoute(mejorBfr.getPath().getEdgeList(), mejorBfr.getIndexFs(), demand.getDemand().getFs(), demand.getDemand().getSource(), demand.getDemand().getDestination(), mejorBfr.getCore());
+
                         establishedRoutes.add((EstablisedRoute) establisedRoute);
-                        kspList.add(kspaths);
-                        Utils.assignFs((EstablisedRoute) establisedRoute, core);
+                        Utils.assignFs((EstablisedRoute) establisedRoute);
                         response.setCore(((EstablisedRoute) establisedRoute).getCore());
                         response.setFsIndexBegin(((EstablisedRoute) establisedRoute).getFsIndexBegin());
                         response.setFsMax(((EstablisedRoute) establisedRoute).getFsMax());
@@ -145,13 +150,28 @@ public class SimuladorController {
                         System.out.println("Imprimiendo BFR de la Red: " + Algorithms.BFR(net, options.getCapacity()));
 
 
-                    }
-                    if (establisedRoute != null || demand.getDemand().getBlocked())
                         break;
+                    }
+
+                    if (fsMax > options.getCapacity() && listaBfr.isEmpty()) {
+                        response.setBlock(true);
+                        System.out.println("Demanda " + demandsQ + " BLOQUEADA ");
+                        //response.setSlotBlock(demand.getFs());
+                        //blocked = true;
+                        demand.getDemand().setBlocked(true);
+                        //slotsBlocked += demand.getFs();
+                        blocksQ++;
+
+                        break;
+                    }
+
+                    if (listaBfr.isEmpty())
+                        fsMax++;
                 }
             } catch (java.lang.Exception e) {
                 e.printStackTrace();
             }
+
             responses.add(response);
         }
 
@@ -180,10 +200,10 @@ public class SimuladorController {
         return responses;
     }
 
-    private int getCore(int limit, boolean [] tested){
+    private int getCore(int limit, boolean[] tested) {
         Random r = new Random();
         int core = r.nextInt(limit);
-        while(tested[core]){
+        while (tested[core]) {
             core = r.nextInt(limit);
         }
         tested[core] = true;
@@ -202,20 +222,20 @@ public class SimuladorController {
                 g.addVertex(i);
             }
             int vertex = 0;
-            for (JsonNode node: object.get("network")) {
+            for (JsonNode node : object.get("network")) {
                 for (int i = 0; i < node.get("connections").size(); i++) {
                     int connection = node.get("connections").get(i).intValue();
                     int distance = node.get("distance").get(i).intValue();
                     List<Core> cores = new ArrayList<>();
 
-                    for (int j = 0; j < numberOfCores; j++){
-                        Core core = new Core(fsWidh,numberOffs);
+                    for (int j = 0; j < numberOfCores; j++) {
+                        Core core = new Core(fsWidh, numberOffs);
                         cores.add(core);
                     }
 
-                    Link link = new Link(distance,cores, vertex, connection);
-                    g.addEdge(vertex,connection,link);
-                    g.setEdgeWeight(link,distance);
+                    Link link = new Link(distance, cores, vertex, connection);
+                    g.addEdge(vertex, connection, link);
+                    g.setEdgeWeight(link, distance);
                 }
                 vertex++;
             }
@@ -256,19 +276,7 @@ public class SimuladorController {
 
             // Escribir datos de cada respuesta
             for (Response response : responses) {
-                writer.write(response.getNroDemanda() + "," +
-                        response.getCantRutasActivas() + "," +
-                        response.getOrigen() + "," +
-                        response.getDestino() + "," +
-                        response.getCore() + "," +
-                        response.getFsIndexBegin() + "," +
-                        response.getFs() + "," +
-                        response.getPath() + "," +
-                        response.getBitrate() + "," +
-                        response.getModulation() + "," +
-                        response.isBlock() + "," +
-                        response.getSlotBlock() + "," +
-                        response.getMSI());
+                writer.write(response.getNroDemanda() + "," + response.getCantRutasActivas() + "," + response.getOrigen() + "," + response.getDestino() + "," + response.getCore() + "," + response.getFsIndexBegin() + "," + response.getFs() + "," + response.getPath() + "," + response.getBitrate() + "," + response.getModulation() + "," + response.isBlock() + "," + response.getSlotBlock() + "," + response.getMSI());
                 writer.newLine();
             }
 
@@ -320,8 +328,6 @@ public class SimuladorController {
     }
 
 
-
-
     private String generarPuntosFS(int fsIndexBegin, int fs) {
         StringBuilder puntos = new StringBuilder("[");
         for (int i = 0; i < fsIndexBegin; i++) {
@@ -353,9 +359,6 @@ public class SimuladorController {
         barra.append("]");
         return barra.toString();
     }
-
-
-
 
 
 }

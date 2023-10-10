@@ -1,27 +1,54 @@
 package py.una.pol.rest.model;
 
+import org.jgrapht.GraphPath;
+
 public class BFR {
-    private String alias;
-    private Double bfr;
+    private GraphPath path;
+    private Double value;
+    private int indexFs;
+    private int core;
 
-    BFR(String alias , Double bfr) {
-        this.alias = alias;
-        this.bfr = bfr;
+    public BFR() {
     }
 
-    public String getAlias() {
-        return alias;
+    public BFR(GraphPath path, Double value, int indexFs, int core) {
+        this.path = path;
+        this.value = value;
+        this.indexFs = indexFs;
+        this.core = core;
     }
 
-    public void setAlias(String alias) {
-        this.alias = alias;
+    public GraphPath getPath() {
+        return path;
     }
 
-    public Double getBfr() {
-        return bfr;
+    public void setPath(GraphPath path) {
+        this.path = path;
     }
 
-    public void setBfr(Double bfr) {
-        this.bfr = bfr;
+    public Double getValue() {
+        return value;
+    }
+
+    public void setValue(Double value) {
+        this.value = value;
+    }
+
+    public int getIndexFs() {
+        return indexFs;
+    }
+
+    public void setIndexFs(int indexFs) {
+        this.indexFs = indexFs;
+    }
+
+    public int getCore() {
+        return core;
+    }
+
+    public void setCore(int core) {
+        this.core = core;
     }
 }
+
+

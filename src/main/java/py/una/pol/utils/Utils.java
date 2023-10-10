@@ -262,10 +262,10 @@ public class Utils {
         return indexes;
     }
 
-    public static void assignFs(EstablisedRoute establisedRoute, int core){
+    public static void assignFs(EstablisedRoute establisedRoute){
         for (Object link: establisedRoute.getPath()){
             for (int i = establisedRoute.getFsIndexBegin(); i < establisedRoute.getFsIndexBegin() + establisedRoute.getFs(); i++){
-                ((Link) link).getCores().get(core).getFs().get(i).setFree(false);
+                ((Link) link).getCores().get(establisedRoute.getCore()).getFs().get(i).setFree(false);
             }
         }
     }

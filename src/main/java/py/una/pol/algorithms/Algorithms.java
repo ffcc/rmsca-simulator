@@ -19,9 +19,69 @@ import java.util.*;
 import static py.una.pol.utils.Utils.*;
 
 public class Algorithms {
-    public static EstablisedRoute fa(Graph graph, List<GraphPath> kspaths, Demand demand, int capacity, int core){ //fragmentation aware
+
+    public static BFR customRsa(Graph graph, GraphPath kspath, Demand demand, int capacity, int core) {
         int begin, count;
-        boolean  so[] = new boolean[capacity]; //Representa los fs ocupados del espectro de todos los enlaces.
+        boolean encontroCamino = false;
+        boolean so[] = new boolean[capacity]; //Representa los fs ocupados del espectro de todos los enlaces.
+        BFR bfr = new BFR();
+
+        Arrays.fill(so, false);//Se inicializa todo el espectro como libre
+
+        //Se recorre el core n de todos los links del path pasado por parametro, principio de continuidad
+        //Se verifican los fs y se setean los slots ocupados con true
+        for (int i = 0; i < capacity; i++) {
+            for (Object path : kspath.getEdgeList()) {
+                Link link = (Link) path;
+                FrecuencySlot fs = link.getCores().get(core).getFs().get(i);
+                if (!fs.isFree()) {
+                    //System.out.println("FS ocupado: " + i);
+                    so[i] = true;
+                }
+            }
+        }
+        begin = count = 0;
+        int j;
+        capacity:
+        //se verifica que la cantidad fs que se solicita ocupar esten disponibles y contiguos dentro del core
+        for (int i = 0; i < capacity; i++) {
+            count = 0;
+            if (!so[i]) {
+                begin = i;
+                //se contabiliza los slots libres
+                for (j = i; j < capacity; j++) {
+                    if (!so[j]) {
+                        count++;
+                    } else {
+                        i = j;
+                        break;
+                    }
+                    //si la cantidad de slots libres == slots que necesita la demanda
+                    if (count == demand.getFs()) {
+                        //System.out.println("Existe espacio en el core: " + core + " de FS: " + i + " a " + j + " cantidad FS requerida: " + demand.getFs());
+                        bfr.setIndexFs(i); //seteamos el indice donde comienza el espacio libre
+                        encontroCamino = true;
+                        break capacity;
+                    }
+                }
+                if (j == capacity) break;
+            }
+        }
+
+        if (encontroCamino) {
+            bfr.setValue(BFRForPath(kspath, capacity)); // Calcula el BFR para el GraphPath actual
+            bfr.setPath(kspath);
+            bfr.setCore(core);
+            System.out.println("Imprimiendo BFR: " + bfr.getValue());
+            return bfr;
+        }
+
+        return null;
+    }
+
+    public static EstablisedRoute fa(Graph graph, List<GraphPath> kspaths, Demand demand, int capacity, int core) { //fragmentation aware
+        int begin, count;
+        boolean so[] = new boolean[capacity]; //Representa los fs ocupados del espectro de todos los enlaces.
         List<GraphPath> kspPlaced = new ArrayList<>();
         GraphPath bestKspSlot = null;
         Map<String, Integer> bestKspSlot2 = new HashMap<>();
@@ -30,17 +90,17 @@ public class Algorithms {
         int k = 0;
         double minBFR = Double.MAX_VALUE; // Inicializa el valor mínimo de BFR con un valor alto
 
-        while (k < kspaths.size() && kspaths.get(k) != null){
+        while (k < kspaths.size() && kspaths.get(k) != null) {
             Arrays.fill(so, false);//Se inicializa todo el espectro como libre
             GraphPath ksp = kspaths.get(k);
 
             //Se recorre el core n de todos los links del path pasado por parametro, principio de continuidad
             //Se verifican los fs y se setean los slots ocupados con true
-            for(int i = 0; i < capacity; i++){
-                for (Object path: ksp.getEdgeList()){
+            for (int i = 0; i < capacity; i++) {
+                for (Object path : ksp.getEdgeList()) {
                     Link link = (Link) path;
                     FrecuencySlot fs = link.getCores().get(core).getFs().get(i);
-                    if(!fs.isFree()){
+                    if (!fs.isFree()) {
                         //System.out.println("FS ocupado: " + i);
                         so[i] = true;
                     }
@@ -50,35 +110,33 @@ public class Algorithms {
             int j;
             capacity:
             //se verifica que la cantidad fs que se solicita ocupar esten disponibles y contiguos dentro del core
-            for(int i = 0; i < capacity; i++){
+            for (int i = 0; i < capacity; i++) {
                 count = 0;
-                if(!so[i]){
+                if (!so[i]) {
                     begin = i;
                     //se contabiliza los slots libres
-                    for(j = i; j < capacity; j++){
-                        if(!so[j]){
+                    for (j = i; j < capacity; j++) {
+                        if (!so[j]) {
                             count++;
-                        }else{
+                        } else {
                             i = j;
                             break;
                         }
                         //si la cantidad de slots libres == slots que necesita la demanda
-                        if(count == demand.getFs()){
+                        if (count == demand.getFs()) {
                             //System.out.println("Existe espacio en el core: " + core + " de FS: " + i + " a " + j + " cantidad FS requerida: " + demand.getFs());
                             fsIndexBeginList.add(i); // Agrega fsIndexBegin a la lista
                             kspPlaced.add(kspaths.get(k));
                             break capacity;
                         }
                     }
-                    if(j == capacity)
-                        break;
+                    if (j == capacity) break;
                 }
             }
             k++;
         }
 
-        if(kspPlaced.size() == 0)
-            return null;
+        if (kspPlaced.size() == 0) return null;
         //Ksp ubidados ahora se debe elegir el mejor
         bestKspSlot2 = Utils.countCuts(graph, kspPlaced, capacity, core, demand.getFs());
         EstablisedRoute establisedRoute2 = new EstablisedRoute((kspPlaced.get(bestKspSlot2.get("ksp")).getEdgeList()), bestKspSlot2.get("slot"), demand.getFs(), demand.getSource(), demand.getDestination(), core);
@@ -101,14 +159,7 @@ public class Algorithms {
             int bestFsIndexBegin = fsIndexBeginList.get(bestIndex); // Obtiene fsIndexBegin correspondiente al mejor kspPlaced
 
             // Crea una instancia de EstablishedRoute con los valores adecuados
-            EstablisedRoute establishedRoute = new EstablisedRoute(
-                    bestKspSlot.getEdgeList(),
-                    bestFsIndexBegin,
-                    demand.getFs(),
-                    demand.getSource(),
-                    demand.getDestination(),
-                    core
-            );
+            EstablisedRoute establishedRoute = new EstablisedRoute(bestKspSlot.getEdgeList(), bestFsIndexBegin, demand.getFs(), demand.getSource(), demand.getDestination(), core);
 
             // Ahora, 'establishedRoute' contiene los valores adecuados, incluyendo 'fsIndexBegin'.
             return establishedRoute;
@@ -117,21 +168,21 @@ public class Algorithms {
         }
     }
 
-    public static EstablisedRoute faca(Graph graph, List<GraphPath> kspaths, Demand demand, int capacity, int core){ // fragmentation aware - congestion avoidance
+    public static EstablisedRoute faca(Graph graph, List<GraphPath> kspaths, Demand demand, int capacity, int core) { // fragmentation aware - congestion avoidance
         int count;
-        boolean  so[] = new boolean[capacity]; //Representa la ocupación del espectro de todos los enlaces.
+        boolean so[] = new boolean[capacity]; //Representa la ocupación del espectro de todos los enlaces.
         List<GraphPath> kspPlaced = new ArrayList<>();
         int k = 0;
-        while (k < kspaths.size() && kspaths.get(k) != null){
+        while (k < kspaths.size() && kspaths.get(k) != null) {
             Arrays.fill(so, false);//Se inicializa todo el espectro como libre
             GraphPath ksp = kspaths.get(k);
 
             //Se setean los slots libres
-            for(int i = 0; i < capacity; i++){
-                for (Object path: ksp.getEdgeList()){
+            for (int i = 0; i < capacity; i++) {
+                for (Object path : ksp.getEdgeList()) {
                     Link link = (Link) path;
                     FrecuencySlot fs = link.getCores().get(core).getFs().get(i);
-                    if(!fs.isFree()){
+                    if (!fs.isFree()) {
                         so[i] = true;
                     }
                 }
@@ -139,23 +190,22 @@ public class Algorithms {
 
             int j;
             capacity:
-            for(int i = 0; i < capacity; i++){
+            for (int i = 0; i < capacity; i++) {
                 count = 0;
-                if(!so[i]){
-                    for(j = i; j < capacity; j++){
-                        if(!so[j]){
+                if (!so[i]) {
+                    for (j = i; j < capacity; j++) {
+                        if (!so[j]) {
                             count++;
-                        }else{
+                        } else {
                             i = j;
                             break;
                         }
-                        if(count == demand.getFs()){
+                        if (count == demand.getFs()) {
                             kspPlaced.add(kspaths.get(k));
                             break capacity;
                         }
                     }
-                    if(j == capacity)
-                        break;
+                    if (j == capacity) break;
                 }
             }
             k++;
@@ -163,27 +213,26 @@ public class Algorithms {
         }
 
         System.out.println("CANTIDAD DE KSP UBICADOS: " + kspPlaced.size());
-        if(kspPlaced.size() == 0)
-            return null;
+        if (kspPlaced.size() == 0) return null;
         Map<String, Integer> slotCuts = new HashMap<>();
         ArrayList<Integer> cIndexes;
         double Fcmt = 9999999;
         double FcmtAux;
-        int selectedPath= -1;
+        int selectedPath = -1;
         int slot = -1;
-        for (k = 0; k <  kspPlaced.size(); k++) {
+        for (k = 0; k < kspPlaced.size(); k++) {
             slotCuts = numCuts(kspPlaced.get(k), graph, capacity, core, demand.getFs());
             System.out.println("Mejor slot: " + slotCuts.get("slot") + " con " + slotCuts.get("cuts") + " cuts");
-            if(slotCuts != null) {
+            if (slotCuts != null) {
 
-                double misalignement =  countMisalignment(kspPlaced.get(k), graph, core,slotCuts.get("slot"));
-                double freeCapacity = countFreeCapacity(kspPlaced.get(k), graph, core,capacity);
+                double misalignement = countMisalignment(kspPlaced.get(k), graph, core, slotCuts.get("slot"));
+                double freeCapacity = countFreeCapacity(kspPlaced.get(k), graph, core, capacity);
                 double jumps = kspPlaced.get(k).getLength();
-                double neighbours = countNeighbour(kspPlaced.get(k),graph);
+                double neighbours = countNeighbour(kspPlaced.get(k), graph);
 
-                FcmtAux = slotCuts.get("cuts") + (misalignement/(demand.getFs()*neighbours)) + (jumps *(demand.getFs()/freeCapacity));
+                FcmtAux = slotCuts.get("cuts") + (misalignement / (demand.getFs() * neighbours)) + (jumps * (demand.getFs() / freeCapacity));
 
-                if (FcmtAux<Fcmt){
+                if (FcmtAux < Fcmt) {
                     Fcmt = FcmtAux;
                     selectedPath = k;
                     slot = slotCuts.get("slot");
@@ -192,25 +241,25 @@ public class Algorithms {
             }
         }
 
-        if(selectedPath == -1) {
+        if (selectedPath == -1) {
             return null;
         }
         List<Link> bestKsp = new ArrayList<Link>(kspPlaced.get(selectedPath).getEdgeList());
-        EstablisedRoute establisedRoute = new EstablisedRoute(bestKsp, slot, demand.getFs(),demand.getSource(),demand.getDestination(), core);
+        EstablisedRoute establisedRoute = new EstablisedRoute(bestKsp, slot, demand.getFs(), demand.getSource(), demand.getDestination(), core);
         System.out.println("RUTA ESTABLECIDA: " + establisedRoute);
         return establisedRoute;
 
 
     }
 
-    public static EstablisedRoute mtlsc(Graph graph, List<GraphPath> kspaths, Demand demand, int capacity, int core){
+    public static EstablisedRoute mtlsc(Graph graph, List<GraphPath> kspaths, Demand demand, int capacity, int core) {
         int k = 0;
         int begin;
         int end;
         int beginSlot = -1;
         int selectedPath = -1;
         float kspMaxSC = -1;
-        boolean  so[] = new boolean[capacity];
+        boolean so[] = new boolean[capacity];
 
         EstablisedRoute establisedRoute = new EstablisedRoute();
         while (k < kspaths.size() && kspaths.get(k) != null) {
@@ -236,7 +285,7 @@ public class Algorithms {
                     }
                     end = i - 1;
                     if (end - begin + 1 >= demand.getFs()) { //bloque que puede utilizarse
-                        HashMap<String,Integer> block = new HashMap();
+                        HashMap<String, Integer> block = new HashMap();
                         block.put("begin", begin);
                         block.put("end", end);
                         espectralBlocks.add(block);
@@ -245,10 +294,10 @@ public class Algorithms {
 
             }
 
-            for (HashMap espectralBlock: espectralBlocks) {
+            for (HashMap espectralBlock : espectralBlocks) {
                 float spectrumConsecutiveness = 0;
-                int blockBegin = (int)espectralBlock.get("begin");
-                for (Object path: ksp.getEdgeList()){
+                int blockBegin = (int) espectralBlock.get("begin");
+                for (Object path : ksp.getEdgeList()) {
                     Link link = (Link) path;
 
                     int linkBlocks = 0;
@@ -265,36 +314,36 @@ public class Algorithms {
                     float sum = 0;
                     float fsCount = 0;
 
-                    for(int c = 0; c < capacity - 1; c++) {
-                        if(c < blockBegin || c > blockBegin + demand.getFs() - 1 ) {
-                            int slot = link.getCores().get(core).getFs().get(c).isFree()?1:0;
-                            int nextSlot = link.getCores().get(core).getFs().get(c+1).isFree()?1:0;
-                            sum += slot*nextSlot;
+                    for (int c = 0; c < capacity - 1; c++) {
+                        if (c < blockBegin || c > blockBegin + demand.getFs() - 1) {
+                            int slot = link.getCores().get(core).getFs().get(c).isFree() ? 1 : 0;
+                            int nextSlot = link.getCores().get(core).getFs().get(c + 1).isFree() ? 1 : 0;
+                            sum += slot * nextSlot;
                             fsCount += slot;
                         }
 
                     }
-                    fsCount += link.getCores().get(core).getFs().get(capacity-1).isFree()?1:0; //para el ultimo slot
+                    fsCount += link.getCores().get(core).getFs().get(capacity - 1).isFree() ? 1 : 0; //para el ultimo slot
 
-                    spectrumConsecutiveness += (sum/linkBlocks)*(fsCount/capacity);  //acumulamos el cl de los links
+                    spectrumConsecutiveness += (sum / linkBlocks) * (fsCount / capacity);  //acumulamos el cl de los links
 
                 }
 
-                if(spectrumConsecutiveness > maxSC) {
+                if (spectrumConsecutiveness > maxSC) {
                     maxSC = spectrumConsecutiveness;
                     selectedPath = k;
-                    beginSlot= blockBegin;
+                    beginSlot = blockBegin;
 
                 }
             }
-            if(maxSC > kspMaxSC) {
+            if (maxSC > kspMaxSC) {
                 kspMaxSC = maxSC;
                 establisedRoute.setPath(kspaths.get(selectedPath).getEdgeList());
                 establisedRoute.setFsIndexBegin(beginSlot);
             }
             k++;
         }
-        if(establisedRoute.getPath() != null) {
+        if (establisedRoute.getPath() != null) {
             establisedRoute.setFs(demand.getFs());
             establisedRoute.setFrom(demand.getSource());
             establisedRoute.setTo(demand.getDestination());
@@ -322,9 +371,9 @@ public class Algorithms {
         Graph graphAux = null;
         Graph bestGraph = graph;
         boolean success = false;
-        ArrayList<Integer> usedIndexes =  new ArrayList<>();
-        ArrayList<Integer> optimalIndexes =  new ArrayList<>();
-        ArrayList<Integer> actualOptimalIndexes =  new ArrayList<>();
+        ArrayList<Integer> usedIndexes = new ArrayList<>();
+        ArrayList<Integer> optimalIndexes = new ArrayList<>();
+        ArrayList<Integer> actualOptimalIndexes = new ArrayList<>();
         List<EstablisedRoute> selectedRoutes = new ArrayList<>();
         List<EstablisedRoute> optimalSelectedRoutes = new ArrayList<>();
         List<EstablisedRoute> actualOptimalSelectedRoutes = new ArrayList<>();
@@ -345,13 +394,13 @@ public class Algorithms {
                 graphBFR = BFR(graph, capacity);
                 break;
             case "MSI":
-                graphMSI =MSI(graph);
+                graphMSI = MSI(graph);
                 break;
         }
 
         for (int i = 0; i < establishedRoutes.size(); i++) {
             pheromones[i] = 1;
-            visibility[i] = visibilityCalc(establishedRoutes.get(i),metric,FSminPC,capacity,graph);
+            visibility[i] = visibilityCalc(establishedRoutes.get(i), metric, FSminPC, capacity, graph);
         }
 
         double summ;
@@ -360,49 +409,49 @@ public class Algorithms {
             usedIndexes.clear();
             currentImprovement = 0;
             summ = 0;
-            for (int j = 0; j < pheromones.length ; j++) {
-                summ += pheromones[j]*visibility[j];
+            for (int j = 0; j < pheromones.length; j++) {
+                summ += pheromones[j] * visibility[j];
             }
 
             for (int j = 0; j < probabilities.length; j++) {
-                probabilities[j] = pheromones[j]*visibility[j]/summ;
+                probabilities[j] = pheromones[j] * visibility[j] / summ;
             }
             count = 0;
             sortProbabilities(probabilities);
-            while(currentImprovement < improvement && count < establishedRoutes.size()) {
+            while (currentImprovement < improvement && count < establishedRoutes.size()) {
                 sameReRouting = 0;
                 try {
                     graphAux = Utils.deepCopy(graph);
 
-                    int routeIndex = selectRoute(probabilities,usedIndexes);
+                    int routeIndex = selectRoute(probabilities, usedIndexes);
                     usedIndexes.add(routeIndex);
                     selectedRoutes.add(establishedRoutes.get(routeIndex));
 
                     for (int j = 0; j < usedIndexes.size(); j++) {
-                        Utils.deallocateFs(graphAux,establishedRoutes.get(usedIndexes.get(j)));
+                        Utils.deallocateFs(graphAux, establishedRoutes.get(usedIndexes.get(j)));
                     }
-                    if(selectedRoutes.size() > 1) {
+                    if (selectedRoutes.size() > 1) {
                         sortRoutes(selectedRoutes, usedIndexes);
                     }
 
                     blocked = false;
                     actualOptimalSelectedRoutes.clear();
                     actualOptimalIndexes.clear();
-                    for (int j = 0; j < selectedRoutes.size() ; j++) {
+                    for (int j = 0; j < selectedRoutes.size(); j++) {
                         Demand demand = new Demand(selectedRoutes.get(j).getFrom(), selectedRoutes.get(j).getTo());
                         List<GraphPath> kspaths = kspList.get(usedIndexes.get(j));
-                        boolean [] tested = new boolean[selectedRoutes.get(j).getPath().get(0).getCores().size()];
+                        boolean[] tested = new boolean[selectedRoutes.get(j).getPath().get(0).getCores().size()];
                         Arrays.fill(tested, false);
                         int core;
-                        while (true){
+                        while (true) {
                             core = Utils.getCore(selectedRoutes.get(j).getPath().get(0).getCores().size(), tested);
                             Class<?>[] paramTypes = {Graph.class, List.class, Demand.class, int.class, int.class};
                             Method method = Algorithms.class.getMethod(routingAlg, paramTypes);
                             List<GraphPath> kspathAux = new ArrayList<>();
-                            for (GraphPath<Integer, Link> kspathss : kspaths){
+                            for (GraphPath<Integer, Link> kspathss : kspaths) {
                                 List<Link> edgeList = new ArrayList<>();
                                 double weight = 0;
-                                for ( Link path : kspathss.getEdgeList()){
+                                for (Link path : kspathss.getEdgeList()) {
                                     Link aux = (Link) graphAux.getEdge(path.getFrom(), path.getTo());
                                     edgeList.add(aux);
                                     weight += aux.getDistance();
@@ -411,109 +460,108 @@ public class Algorithms {
                             }
                             Object establisedRoute = method.invoke(Algorithms.class, graphAux, kspathAux, demand, capacity, core);
 
-                            if(establisedRoute == null){
+                            if (establisedRoute == null) {
                                 tested[core] = true;//Se marca el core probado
-                                if(!Arrays.asList(tested).contains(false)){//Se ve si ya se probaron todos los cores
+                                if (!Arrays.asList(tested).contains(false)) {//Se ve si ya se probaron todos los cores
                                     blocked = true;
                                     break;
                                 }
-                            }else{
+                            } else {
                                 //Ruta establecida
-                                Utils.assignFs((EstablisedRoute)establisedRoute, core);
-                                actualOptimalSelectedRoutes.add((EstablisedRoute)establisedRoute);
+                                Utils.assignFs((EstablisedRoute) establisedRoute);
+                                actualOptimalSelectedRoutes.add((EstablisedRoute) establisedRoute);
                                 actualOptimalIndexes.add(usedIndexes.get(j));
 
-                                if(Utils.compareRoutes((EstablisedRoute)establisedRoute, selectedRoutes.get(j)))
+                                if (Utils.compareRoutes((EstablisedRoute) establisedRoute, selectedRoutes.get(j)))
                                     sameReRouting++;
                                 break;
                             }
                         }
                     }
-                    if(blocked)
-                        currentImprovement = 0;
+                    if (blocked) currentImprovement = 0;
                     else {
                         currentImprovement = improvementCalculation(graphAux, metric, capacity, graphEntropy, graphBFR, graphMSI, graphPC, FSminPC, i, count);
                     }
 
                     count++;
-                    if((selectedRoutes.size() - sameReRouting) > betterRoutesQ) {
+                    if ((selectedRoutes.size() - sameReRouting) > betterRoutesQ) {
                         System.out.println("Sale por break");
                         break;
                     }
-                } catch ( NoSuchMethodException  | IllegalAccessException | InvocationTargetException e) {
+                } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
                     e.printStackTrace();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
-            if((currentImprovement >= improvement) && betterRoutesQ > actualOptimalSelectedRoutes.size() - sameReRouting){
+            if ((currentImprovement >= improvement) && betterRoutesQ > actualOptimalSelectedRoutes.size() - sameReRouting) {
                 System.out.println("Llego con currentImprovement: " + currentImprovement + " en count: " + count + " y ant: " + i);
                 optimalSelectedRoutes.clear();
                 optimalIndexes.clear();
                 optimalSelectedRoutes.addAll(actualOptimalSelectedRoutes);
                 optimalIndexes.addAll(actualOptimalIndexes);
-                bestGraph =  Utils.deepCopy(graphAux);
+                bestGraph = Utils.deepCopy(graphAux);
                 betterRoutesQ = optimalSelectedRoutes.size();
                 success = true;
-                for(int index : usedIndexes){
-                    pheromones[index] += currentImprovement/100;
+                for (int index : usedIndexes) {
+                    pheromones[index] += currentImprovement / 100;
                 }
                 break;
             }
 
             //Evaporar feromonas
-            for (int index = 0; index < pheromones.length; index++){
-                pheromones[index] *= (1-ro);
+            for (int index = 0; index < pheromones.length; index++) {
+                pheromones[index] *= (1 - ro);
             }
         }
         System.out.println("Tiempo de ejecución ACO: " + (System.currentTimeMillis() - e0) + " ms");
-        Map<String,Graph> result = new HashMap<>();
-        if(success){
+        Map<String, Graph> result = new HashMap<>();
+        if (success) {
             List<EstablisedRoute> newEstablishedRoutes = new ArrayList<>();
             int i = 0;
-            for(EstablisedRoute route: establishedRoutes){
+            for (EstablisedRoute route : establishedRoutes) {
                 List<Link> links = new ArrayList<>();
                 List<Link> path;
-                if(optimalIndexes.contains(i)){
+                if (optimalIndexes.contains(i)) {
                     path = actualOptimalSelectedRoutes.get(usedIndexes.indexOf(i)).getPath();
-                }else {
+                } else {
                     path = route.getPath();
                 }
-                for(Link link:path){
-                    Link newLink = (Link) bestGraph.getEdge(link.getFrom(),link.getTo());
+                for (Link link : path) {
+                    Link newLink = (Link) bestGraph.getEdge(link.getFrom(), link.getTo());
                     links.add(newLink);
                 }
-                EstablisedRoute newRoute = new EstablisedRoute(links,route.getFsIndexBegin(),route.getFs(),route.getFrom(),route.getTo(),route.getCore());
+                EstablisedRoute newRoute = new EstablisedRoute(links, route.getFsIndexBegin(), route.getFs(), route.getFrom(), route.getTo(), route.getCore());
                 newEstablishedRoutes.add(newRoute);
                 i++;
             }
             establishedRoutes.clear();
             establishedRoutes.addAll(newEstablishedRoutes);
-            graph =  Utils.deepCopy(bestGraph);
+            graph = Utils.deepCopy(bestGraph);
             result.put("graph", graph);
-        }else{
+        } else {
             result.put("graph", null);
         }
 
         return result;
     }
 
-    private static double improvementCalculation(Graph graph, String metric, int capacity, double graphEntropy, double graphBFR, double graphMSI,double graphPC, int fsMinPC, int i, int count){
+    private static double improvementCalculation(Graph graph, String metric, int capacity, double graphEntropy, double graphBFR, double graphMSI, double graphPC, int fsMinPC, int i, int count) {
 
         switch (metric) {
             case "ENTROPY":
                 double currentGraphEntropy = Utils.graphEntropyCalculation(graph);
-                return 100 - currentGraphEntropy*100/graphEntropy;
+                return 100 - currentGraphEntropy * 100 / graphEntropy;
             case "BFR":
                 double currentBFR = BFR(graph, capacity);
                 //System.out.println("En ANT: " + i + ", count: " + count + " - {" + graphBFR + " - " + currentBFR + "}");
-                return 100 - ((roundDecimals(currentBFR, 6) * 100)/roundDecimals(graphBFR, 6));
+                return 100 - ((roundDecimals(currentBFR, 6) * 100) / roundDecimals(graphBFR, 6));
             case "MSI":
                 double currentMSI = MSI(graph);
-                return 100 - ((roundDecimals(currentMSI, 6) * 100)/roundDecimals(graphMSI, 6));
+                return 100 - ((roundDecimals(currentMSI, 6) * 100) / roundDecimals(graphMSI, 6));
             case "PATH_CONSECUTIVENESS":
                 double currentPC = PathConsecutiveness(Utils.twoLinksRoutes(graph), capacity, fsMinPC);
-                return ((roundDecimals(currentPC, 6) * 100)/roundDecimals(graphPC, 6))-100;
+                return ((roundDecimals(currentPC, 6) * 100) / roundDecimals(graphPC, 6)) - 100;
             default:
                 return 0;
         }
@@ -524,12 +572,12 @@ public class Algorithms {
             case "ENTROPY":
                 return routeEntropy(establishedRoute);
             case "BFR":
-                return routeBFR(establishedRoute,capacity);
+                return routeBFR(establishedRoute, capacity);
             case "PATH_CONSECUTIVENESS":
                 List<GraphPath> routes = new ArrayList<>();
-                GraphWalk gw = new GraphWalk(g,establishedRoute.getFrom(),establishedRoute.getTo(),establishedRoute.getPath(),1);
+                GraphWalk gw = new GraphWalk(g, establishedRoute.getFrom(), establishedRoute.getTo(), establishedRoute.getPath(), 1);
                 routes.add(gw);
-                double pathAux = PathConsecutiveness(routes,capacity,FSminPC);
+                double pathAux = PathConsecutiveness(routes, capacity, FSminPC);
                 return capacity - 1 - pathAux;
             case "MSI":
                 return establishedRoute.getFsIndexBegin() + establishedRoute.getFs() - 1;
@@ -547,43 +595,43 @@ public class Algorithms {
         return result;
     }
 
-    public static double PathConsecutiveness (List<GraphPath> twoLinksRoutes, int capacity, int FSMinPC){
-        double sum=0;
+    public static double PathConsecutiveness(List<GraphPath> twoLinksRoutes, int capacity, int FSMinPC) {
+        double sum = 0;
         boolean so[] = new boolean[capacity];
         boolean goNextBlock;//bandera para avisar que tiene que ir al siguiente bloque
         int cgb = 0;//contador global de bloques
         double CE;
         double joins, cfs;
         int contFSMinPC = 0; //contador para saber si tiene el mínimo de espacio para ser considerado libre
-        int cores= 0;
-        for(GraphPath route : twoLinksRoutes){
-            cores = ((Link)route.getEdgeList().get(0)).getCores().size();
+        int cores = 0;
+        for (GraphPath route : twoLinksRoutes) {
+            cores = ((Link) route.getEdgeList().get(0)).getCores().size();
             //Se setean los slots libres
-            for(int i = 0; i < cores; i++){
+            for (int i = 0; i < cores; i++) {
                 Arrays.fill(so, false); //Se inicializa todo el espectro como libre
-                for (Link link: (List<Link>) route.getEdgeList()){
-                    for(int j=0;j<capacity;j++){
+                for (Link link : (List<Link>) route.getEdgeList()) {
+                    for (int j = 0; j < capacity; j++) {
                         FrecuencySlot fs = link.getCores().get(i).getFs().get(j);
-                        if(!fs.isFree()){
+                        if (!fs.isFree()) {
                             so[j] = true;
                         }
                     }
                 }
 
                 //pone ocupado los bloques menores al minimo
-                for(int j=0;j<capacity;j++){
+                for (int j = 0; j < capacity; j++) {
                     contFSMinPC = 0; //reset
-                    if(!so[j]){
-                        for(int k=j;k<capacity;k++){
-                            if(!so[j]){
+                    if (!so[j]) {
+                        for (int k = j; k < capacity; k++) {
+                            if (!so[j]) {
                                 contFSMinPC++;
-                            }else{
+                            } else {
                                 break;
                             }
                         }
-                        if(contFSMinPC < FSMinPC){
+                        if (contFSMinPC < FSMinPC) {
                             //poner como ocupados
-                            for(int l=0;l < contFSMinPC;l++){
+                            for (int l = 0; l < contFSMinPC; l++) {
                                 so[j + l] = true;
                             }
                         }
@@ -594,33 +642,33 @@ public class Algorithms {
                 //calcular cantidad de bloques libres
                 goNextBlock = false;
                 cgb = 0;
-                for(int j=0;j<capacity;j++){
-                    if(!so[j] && !goNextBlock){
+                for (int j = 0; j < capacity; j++) {
+                    if (!so[j] && !goNextBlock) {
                         cgb++;
                         goNextBlock = true;
-                    }else if (so[j]){
+                    } else if (so[j]) {
                         goNextBlock = false;
                     }
                 }
 
                 cfs = 0;
                 joins = 0;
-                for(int j=0;j<capacity - 1;j++){ //recorre hasta el penúltimo fs
-                    int slot = so[j]?0:1;
-                    int nextSlot = so[j+1]?0:1;
-                    joins += slot*nextSlot;
-                    if(!so[j]){
+                for (int j = 0; j < capacity - 1; j++) { //recorre hasta el penúltimo fs
+                    int slot = so[j] ? 0 : 1;
+                    int nextSlot = so[j + 1] ? 0 : 1;
+                    joins += slot * nextSlot;
+                    if (!so[j]) {
                         cfs++;
                     }
                 }
                 //para el ultimo fs
-                if(!so[capacity - 1]){
+                if (!so[capacity - 1]) {
                     cfs++;
                 }
 
-                if(cgb==0){
-                    CE=0;
-                }else{
+                if (cgb == 0) {
+                    CE = 0;
+                } else {
                     CE = (joins / cgb) * (cfs / capacity);
                 }
                 sum += CE;
@@ -628,42 +676,42 @@ public class Algorithms {
 
         }
 
-        return sum/twoLinksRoutes.size()*cores;
+        return sum / twoLinksRoutes.size() * cores;
     }
+
     public static double BFRLinks(List<Link> links, int capacity) {
         double ocuppiedSlotCount = 0;
         double freeBlockSize = 0;
         double maxBlock = 0;
         double BFRLinks = 0;
-        int contadorCore=0;
-        int contadorLink=0;
-        for (Link link: links) {
+        int contadorCore = 0;
+        int contadorLink = 0;
+        for (Link link : links) {
             contadorLink++;
             //System.out.println("Link N°: " + contadorLink);
-            contadorCore=0;
-            for (Core core: link.getCores()) {
+            contadorCore = 0;
+            for (Core core : link.getCores()) {
                 contadorCore++;
                 ocuppiedSlotCount = 0;
                 freeBlockSize = 0;
                 maxBlock = 0;
                 // System.out.println("Core N°: " + contadorCore);
-                for (int i=0; i< capacity; i++){
-                    if (core.getFs().get(i).isFree()){
+                for (int i = 0; i < capacity; i++) {
+                    if (core.getFs().get(i).isFree()) {
                         freeBlockSize++;
-                    }else{
-                        if (freeBlockSize > maxBlock ){
-                            maxBlock  = freeBlockSize;
+                    } else {
+                        if (freeBlockSize > maxBlock) {
+                            maxBlock = freeBlockSize;
                         }
                         freeBlockSize = 0;
                         ocuppiedSlotCount++;
                     }
                 }
 
-                if (freeBlockSize > maxBlock ){
-                    maxBlock  = freeBlockSize;
+                if (freeBlockSize > maxBlock) {
+                    maxBlock = freeBlockSize;
                 }
-                if(capacity != ocuppiedSlotCount)
-                    BFRLinks +=  (1 - maxBlock/(capacity-ocuppiedSlotCount));
+                if (capacity != ocuppiedSlotCount) BFRLinks += (1 - maxBlock / (capacity - ocuppiedSlotCount));
             }
 
         }
@@ -671,34 +719,34 @@ public class Algorithms {
         return BFRLinks;
     }
 
-    public static double BFR(Graph g, int capacity){
+    public static double BFR(Graph g, int capacity) {
         double BFRLinks = 0;
         int cores;
 
         List<Link> links = new ArrayList<>();
         links.addAll(g.edgeSet());
         cores = links.get(0).getCores().size();
-        BFRLinks = BFRLinks( links,capacity);
-        return BFRLinks/g.edgeSet().size()*cores;
+        BFRLinks = BFRLinks(links, capacity);
+        return BFRLinks / g.edgeSet().size() * cores;
     }
 
-    public static double routeBFR(EstablisedRoute route, int capacity){
+    public static double routeBFR(EstablisedRoute route, int capacity) {
 
-        double BFRLinks = BFRLinks(route.getPath(),capacity);
+        double BFRLinks = BFRLinks(route.getPath(), capacity);
 
-        return BFRLinks/route.getPath().size();
+        return BFRLinks / route.getPath().size();
     }
 
     public static double MSILinks(List<Link> links) {
         int greaterFreeIndex = 0;
         double MSILink = 0;
         int cores = 0;
-        for (Link link: links) {
+        for (Link link : links) {
             cores = link.getCores().size();
-            for (Core core: link.getCores()) {
+            for (Core core : link.getCores()) {
                 greaterFreeIndex = 0;
-                for (int i=core.getFs().size() - 1; i >= 0; i--){
-                    if (!core.getFs().get(i).isFree()){
+                for (int i = core.getFs().size() - 1; i >= 0; i--) {
+                    if (!core.getFs().get(i).isFree()) {
                         greaterFreeIndex = i;
                         break;
                     }
@@ -711,32 +759,32 @@ public class Algorithms {
         return MSILink;
     }
 
-    public static double MSI(Graph g){
+    public static double MSI(Graph g) {
         List<Link> links = new ArrayList<>();
         links.addAll(g.edgeSet());
-        int cores =links.get(0).getCores().size();
+        int cores = links.get(0).getCores().size();
         double MSILink = MSILinks(links);
         // System.out.println("----MSILink: " + MSILink + "----");
         //System.out.println("----g.edgeSet().size(): " + g.edgeSet().size() + "----");
-        return MSILink/(g.edgeSet().size()*cores);
+        return MSILink / (g.edgeSet().size() * cores);
     }
 
-    public static double MSIPath(EstablisedRoute route){
+    public static double MSIPath(EstablisedRoute route) {
         int cores = route.getPath().get(0).getCores().size();
         double MSILink = MSILinks(route.getPath());
 
-        return MSILink/route.getPath().size()*cores;
+        return MSILink / route.getPath().size() * cores;
     }
 
     public static double routeEntropy(EstablisedRoute establishedRoute) {
         List<FrecuencySlot> fs;
-        double uelink=0;
+        double uelink = 0;
 
-        for (Link link: establishedRoute.getPath()) {
+        for (Link link : establishedRoute.getPath()) {
             fs = link.getCores().get(establishedRoute.getCore()).getFs();
             int ueCount = 0;
-            for (int i = 0; i < fs.size() - 1 ; i++) {
-                if(fs.get(i).isFree() != fs.get(i+1).isFree()){
+            for (int i = 0; i < fs.size() - 1; i++) {
+                if (fs.get(i).isFree() != fs.get(i + 1).isFree()) {
                     ueCount++;
                 }
             }
@@ -744,7 +792,7 @@ public class Algorithms {
             uelink += ueCount;
         }
 
-        return uelink/establishedRoute.getPath().size();
+        return uelink / establishedRoute.getPath().size();
     }
 
     public static int selectRoute(double[] probabilities, ArrayList usedIndexes) {
@@ -756,9 +804,9 @@ public class Algorithms {
             indexOrder[i] = i;
         }
 
-        for (int i = 0; i < probabilities.length -1 ; i++) {
-            for (int j = i +1 ; j < probabilities.length; j++) {
-                if(probabilities[i] > probabilities[j]) {
+        for (int i = 0; i < probabilities.length - 1; i++) {
+            for (int j = i + 1; j < probabilities.length; j++) {
+                if (probabilities[i] > probabilities[j]) {
                     sortAux = indexOrder[i];
                     indexOrder[i] = indexOrder[j];
                     indexOrder[j] = sortAux;
@@ -769,15 +817,15 @@ public class Algorithms {
         double summProb = 0;
         int lastZeroPos = -1;
         for (int i = 0; i < probabilities.length; i++) {
-            if(!usedIndexes.contains(i)) {
+            if (!usedIndexes.contains(i)) {
                 summProb += probabilities[i];
 
-                if(probabilities[i] == 0) {
+                if (probabilities[i] == 0) {
                     lastZeroPos = i;
                 }
             }
         }
-        if(summProb == 0) return lastZeroPos;
+        if (summProb == 0) return lastZeroPos;
 
         Random random = new Random();
         double randomValue = summProb * random.nextDouble();
@@ -785,7 +833,7 @@ public class Algorithms {
         int index = -1;
         while (summProb <= randomValue) {
             index++;
-            if(!usedIndexes.contains(indexOrder[index])) {
+            if (!usedIndexes.contains(indexOrder[index])) {
                 summProb += probabilities[indexOrder[index]];
             }
         }
@@ -797,12 +845,12 @@ public class Algorithms {
         return indexOrder[index];
     }
 
-    public static void sortProbabilities(double[] probabilites){
+    public static void sortProbabilities(double[] probabilites) {
         double aux;
         int n = probabilites.length;
         for (int i = 0; i <= n - 1; i++) {
             for (int j = i + 1; j < n; j++) {
-                if(probabilites[i] > probabilites[j]){
+                if (probabilites[i] > probabilites[j]) {
                     aux = probabilites[i];
                     probabilites[i] = probabilites[j];
                     probabilites[j] = aux;
@@ -812,59 +860,57 @@ public class Algorithms {
     }
 
     public static void sortRoutes(List<EstablisedRoute> routes, ArrayList<Integer> usedIndexes) {
-        for (int i = 0; i < routes.size() - 1 ; i++) {
-            for (int j = i + 1; j < routes.size() ; j++) {
-                if(routes.get(j).getFs() > routes.get(i).getFs()) {
+        for (int i = 0; i < routes.size() - 1; i++) {
+            for (int j = i + 1; j < routes.size(); j++) {
+                if (routes.get(j).getFs() > routes.get(i).getFs()) {
                     EstablisedRoute routeAux = routes.get(i);
-                    routes.set(i,routes.get(j));
-                    routes.set(j,routeAux);
+                    routes.set(i, routes.get(j));
+                    routes.set(j, routeAux);
 
                     int indexAux = usedIndexes.get(i);
-                    usedIndexes.set(i,usedIndexes.get(j));
-                    usedIndexes.set(j,indexAux);
+                    usedIndexes.set(i, usedIndexes.get(j));
+                    usedIndexes.set(j, indexAux);
                 }
             }
         }
     }
 
-    public static double graphUsePercentage(Graph graph){
+    public static double graphUsePercentage(Graph graph) {
         double total = 0;
         double occup = 0;
         List<Link> links = new ArrayList<>();
         links.addAll(graph.edgeSet());
-        for (Link link: links) {
-            for (Core core: link.getCores()) {
-                for(int i = 0; i < core.getFs().size(); i++){
-                    if(!core.getFs().get(i).isFree())
-                        occup++;
+        for (Link link : links) {
+            for (Core core : link.getCores()) {
+                for (int i = 0; i < core.getFs().size(); i++) {
+                    if (!core.getFs().get(i).isFree()) occup++;
                     total++;
                 }
             }
         }
 
-        return occup / total ;
+        return occup / total;
     }
 
-    public static double entropyPerUse(Graph graph, List<EstablisedRoute> establishedRoutes, int capacity){
+    public static double entropyPerUse(Graph graph, List<EstablisedRoute> establishedRoutes, int capacity) {
         List<FrecuencySlot> fs;
-        double uelink=0;
+        double uelink = 0;
         int ueCount;
         int countLinks = 0;
         int occup = 0;
         double used = 0;
         double total = 0;
         double entropy;
-        for (EstablisedRoute route : establishedRoutes){
-            for(Link link : route.getPath()){
+        for (EstablisedRoute route : establishedRoutes) {
+            for (Link link : route.getPath()) {
                 ueCount = 0;
-                for(Core core : link.getCores()){
+                for (Core core : link.getCores()) {
                     fs = core.getFs();
-                    for (int i = 0; i < fs.size() - 1 ; i++) {
-                        if(fs.get(i).isFree() != fs.get(i+1).isFree()){
+                    for (int i = 0; i < fs.size() - 1; i++) {
+                        if (fs.get(i).isFree() != fs.get(i + 1).isFree()) {
                             ueCount++;
                         }
-                        if(!fs.get(i).isFree())
-                            occup++;
+                        if (!fs.get(i).isFree()) occup++;
                     }
                 }
                 uelink += ueCount;
@@ -873,7 +919,7 @@ public class Algorithms {
 
             entropy = uelink / countLinks;
             used = occup / capacity;
-            total += (entropy*used);
+            total += (entropy * used);
 
         }
 
@@ -881,65 +927,62 @@ public class Algorithms {
 
     }
 
-    public static double externalFragmentation(Graph graph, int capacity){
+    public static double externalFragmentation(Graph graph, int capacity) {
         double ef = 0;
         int blocksFreeC;
         int maxBlockFree;
         int currentBlockFree;
         List<Link> links = new ArrayList<>();
         links.addAll(graph.edgeSet());
-        for(Link link : links){
-            for(Core core : link.getCores()){
+        for (Link link : links) {
+            for (Core core : link.getCores()) {
                 maxBlockFree = 0;
                 blocksFreeC = 0;
                 currentBlockFree = 0;
-                for(FrecuencySlot fs : core.getFs()){
-                    if(fs.isFree()){
+                for (FrecuencySlot fs : core.getFs()) {
+                    if (fs.isFree()) {
                         //if(currentBlockFree == 0)
                         blocksFreeC++;//Contador global de slots libre
                         currentBlockFree++;//Contador slots libre del bloque actual
-                    }else{
-                        if(currentBlockFree > maxBlockFree)
-                            maxBlockFree = currentBlockFree;
+                    } else {
+                        if (currentBlockFree > maxBlockFree) maxBlockFree = currentBlockFree;
                         currentBlockFree = 0;
                     }
                 }
-                if(maxBlockFree == 0 && currentBlockFree == capacity)//Para el caso en el que todo el espectro esta libre
+                if (maxBlockFree == 0 && currentBlockFree == capacity)//Para el caso en el que todo el espectro esta libre
                     maxBlockFree = capacity;
 
-                if(maxBlockFree == 0 && blocksFreeC == 0)//Para el caso en el que todo el espectro esta ocupado
+                if (maxBlockFree == 0 && blocksFreeC == 0)//Para el caso en el que todo el espectro esta ocupado
                     blocksFreeC = 1;
 
-                if(maxBlockFree == 0 && currentBlockFree != capacity && currentBlockFree != 0)//Para el caso en el que solo se encuentra 1 bloque libre
+                if (maxBlockFree == 0 && currentBlockFree != capacity && currentBlockFree != 0)//Para el caso en el que solo se encuentra 1 bloque libre
                     maxBlockFree = currentBlockFree;
 
-                ef += 1 - ((double)maxBlockFree / (double)blocksFreeC);
+                ef += 1 - ((double) maxBlockFree / (double) blocksFreeC);
             }
         }
 
         return ef / (links.size() * links.get(0).getCores().size());
     }
 
-    public static double shf(Graph graph, int capacity){
+    public static double shf(Graph graph, int capacity) {
         double shf = 0;
         double sf = 0;
         List<Link> links = new ArrayList<>();
         links.addAll(graph.edgeSet());
-        for(Link link : links) {
+        for (Link link : links) {
             for (Core core : link.getCores()) {
                 sf = 0;
-                for (FrecuencySlot fs : core.getFs()){
-                    if(fs.isFree())
-                        sf++;
+                for (FrecuencySlot fs : core.getFs()) {
+                    if (fs.isFree()) sf++;
                     else {
-                        if(sf != 0)  //hasta 1   *  [0, 5.86]
+                        if (sf != 0)  //hasta 1   *  [0, 5.86]
                             shf += ((sf / capacity) * Math.log(capacity / sf));
                         sf = 0;
                     }
                 }
                 sf = sf;
-                if(sf != 0)
-                    shf += ((sf / capacity) * Math.log(capacity / sf));
+                if (sf != 0) shf += ((sf / capacity) * Math.log(capacity / sf));
             }
         }
         return shf / links.size() * links.get(0).getCores().size();
