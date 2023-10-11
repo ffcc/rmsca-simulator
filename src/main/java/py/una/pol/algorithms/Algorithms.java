@@ -72,7 +72,7 @@ public class Algorithms {
             bfr.setValue(BFRForPath(kspath, capacity)); // Calcula el BFR para el GraphPath actual
             bfr.setPath(kspath);
             bfr.setCore(core);
-            System.out.println("Imprimiendo BFR: " + bfr.getValue());
+            System.out.println("Imprimiendo BFR: " + bfr.getValue() + " indice: " + core);
             return bfr;
         }
 

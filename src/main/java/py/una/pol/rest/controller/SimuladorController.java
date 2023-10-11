@@ -135,6 +135,7 @@ public class SimuladorController {
 
                         // Agregar aqui si cumple con el umbral de la diafonia
 
+                        System.out.println("Elegimos el BF: " + mejorBfr.getValue() + ", en nucleo: " + mejorBfr.getCore());
 
                         EstablisedRoute establisedRoute = new EstablisedRoute(mejorBfr.getPath().getEdgeList(), mejorBfr.getIndexFs(), demand.getDemand().getFs(), demand.getDemand().getSource(), demand.getDemand().getDestination(), mejorBfr.getCore());
 
@@ -153,7 +154,7 @@ public class SimuladorController {
                         break;
                     }
 
-                    if (fsMax > options.getCapacity() && listaBfr.isEmpty()) {
+                    if (fsMax >= options.getCapacity() && listaBfr.isEmpty()) {
                         response.setBlock(true);
                         System.out.println("Demanda " + demandsQ + " BLOQUEADA ");
                         //response.setSlotBlock(demand.getFs());
