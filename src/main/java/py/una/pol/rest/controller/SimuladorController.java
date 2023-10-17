@@ -79,7 +79,7 @@ public class SimuladorController {
             response.setCantRutasActivas(establishedRoutes.size());
             response.setOrigen(demand.getDemand().getSource());
             response.setDestino(demand.getDemand().getDestination());
-            System.out.println("Demanda: " + response.getNroDemanda() + ", Origen: " + demand.getDemand().getSource() + ", Destino: " + demand.getDemand().getDestination() + ", Cantidad de rutas en uso: " + establishedRoutes.size());
+            System.out.println("Demanda: " + response.getNroDemanda() + ", Origen: " + demand.getDemand().getSource() + ", Destino: " + demand.getDemand().getDestination() + ", Distancia: " + demand.getDistance() + ", Cantidad de rutas en uso: " + establishedRoutes.size());
             demandsQ++;
             kspaths.clear();
 
@@ -119,7 +119,7 @@ public class SimuladorController {
                         for (int i = 0; i < options.getCores(); i++) {
                             //cumple principios de eon
                             //calcular bfr
-                            listaBfr.add(Algorithms.customRsa(net, path, demand.getDemand(), fsMax, i));
+                            listaBfr.add(Algorithms.customRsa(net, path, demand.getDemand(), fsMax, i, options.getCapacity()));
                         }
                     }
 

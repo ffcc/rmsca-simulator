@@ -20,7 +20,7 @@ import static py.una.pol.utils.Utils.*;
 
 public class Algorithms {
 
-    public static BFR customRsa(Graph graph, GraphPath kspath, Demand demand, int capacity, int core) {
+    public static BFR customRsa(Graph graph, GraphPath kspath, Demand demand, int capacity, int core, int totalCapacity) {
         int begin, count;
         boolean encontroCamino = false;
         boolean so[] = new boolean[capacity]; //Representa los fs ocupados del espectro de todos los enlaces.
@@ -69,7 +69,7 @@ public class Algorithms {
         }
 
         if (encontroCamino) {
-            bfr.setValue(BFRForPath(kspath, capacity)); // Calcula el BFR para el GraphPath actual
+            bfr.setValue(BFRForPath(kspath, totalCapacity, core)); // Calcula el BFR para el GraphPath actual
             bfr.setPath(kspath);
             bfr.setCore(core);
             System.out.println("Imprimiendo BFR: " + bfr.getValue() + " indice: " + core);
@@ -142,7 +142,7 @@ public class Algorithms {
         EstablisedRoute establisedRoute2 = new EstablisedRoute((kspPlaced.get(bestKspSlot2.get("ksp")).getEdgeList()), bestKspSlot2.get("slot"), demand.getFs(), demand.getSource(), demand.getDestination(), core);
 
         for (GraphPath gPath : kspPlaced) {
-            double currentBFR = BFRForPath(gPath, capacity); // Calcula el BFR para el GraphPath actual
+            double currentBFR = BFRForPath(gPath, capacity, 0); // Calcula el BFR para el GraphPath actual
             System.out.println("Imprimiendo BFR: " + currentBFR);
             // Compara el BFR actual con el valor mínimo
             if (currentBFR < minBFR) {
@@ -988,16 +988,71 @@ public class Algorithms {
         return shf / links.size() * links.get(0).getCores().size();
     }
 
-    public static double BFRForPath(GraphPath gPath, int capacity) { // Cambia el parámetro de Graph a GraphPath
-        double BFRLinks = 0;
-        int cores;
-
+    public static double BFRForPath(GraphPath gPath, int capacity, int coreIndex) {
         List<Link> links = new ArrayList<>();
-        links.addAll(gPath.getEdgeList()); // Obtiene la lista de enlaces desde el GraphPath
-        cores = links.get(0).getCores().size();
-        BFRLinks = BFRLinks(links, capacity); // Llama a la función BFRLinks con la lista de enlaces
-        return BFRLinks / gPath.getEdgeList().size() * cores; // Calcula el BFR usando el GraphPath
+        links.addAll(gPath.getEdgeList());
+
+        // Calcula el BFR para cada enlace en el camino y el núcleo específico
+        double totalBFR = 0;
+
+        for (Link link : links) {
+            if (coreIndex >= 0 && coreIndex < link.getCores().size()) {
+                Core core = link.getCores().get(coreIndex);
+                double BFR = calculateBFRForLink(core, capacity);
+                totalBFR += BFR;
+            }
+        }
+
+        int numLinksWithCore = getNumLinksWithCore(links, coreIndex);
+        double averageBFR = (numLinksWithCore > 0) ? totalBFR / numLinksWithCore : 0;
+
+        return averageBFR;
     }
+
+    public static double calculateBFRForLink(Core core, int capacity) {
+        List<FrecuencySlot> fs = core.getFs();
+        double maxFreeBlockSize = 0;
+        double fsFree = 0;
+        double freeBlockSize = 0;
+        boolean inFreeBlock = false;
+
+        for (FrecuencySlot slot : fs) {
+            if (slot.isFree()) {
+                freeBlockSize++;
+                inFreeBlock = true;
+            } else {
+                if (inFreeBlock) {
+                    maxFreeBlockSize = Math.max(maxFreeBlockSize, freeBlockSize);
+                    freeBlockSize = 0;
+                    inFreeBlock = false;
+                }
+                fsFree++;
+            }
+        }
+
+        // Asegura que el último bloque libre se registre si es el más grande
+        if (inFreeBlock) {
+            maxFreeBlockSize = Math.max(maxFreeBlockSize, freeBlockSize);
+        }
+
+        double coreBFR = (fsFree > 0) ? 1 - (maxFreeBlockSize / fsFree) : 0;
+
+        return coreBFR;
+    }
+
+
+    public static int getNumLinksWithCore(List<Link> links, int coreIndex) {
+        int numLinks = 0;
+        for (Link link : links) {
+            if (coreIndex >= 0 && coreIndex < link.getCores().size()) {
+                numLinks++;
+            }
+        }
+        return numLinks;
+    }
+
+
+
 
     // Método para imprimir los caminos en kspPlaced
     private static void imprimirCaminos(List<GraphPath> kspPlaced) {
