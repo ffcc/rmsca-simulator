@@ -139,7 +139,7 @@ public class SimuladorController {
 
                         // Agregar aqui si cumple con el umbral de la diafonia
 
-                        System.out.println("Elegimos el BF: " + mejorBfr.getValue() + ", en nucleo: " + mejorBfr.getCore());
+                        System.out.println("Elegimos el BFR: " + mejorBfr.getValue() + ", y el MSI: " + mejorBfr.getMsi() + " en nucleo: " + mejorBfr.getCore());
 
                         EstablisedRoute establisedRoute = new EstablisedRoute(mejorBfr.getPath().getEdgeList(), mejorBfr.getIndexFs(), demand.getDemand().getFs(), demand.getDemand().getSource(), demand.getDemand().getDestination(), mejorBfr.getCore());
 
