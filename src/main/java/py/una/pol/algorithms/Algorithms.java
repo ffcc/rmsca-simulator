@@ -25,6 +25,7 @@ public class Algorithms {
         boolean encontroCamino = false;
         boolean so[] = new boolean[capacity]; //Representa los fs ocupados del espectro de todos los enlaces.
         BFR bfr = new BFR();
+        int msi = 0;
 
         Arrays.fill(so, false);//Se inicializa todo el espectro como libre
 
@@ -68,10 +69,19 @@ public class Algorithms {
             }
         }
 
+        // Cálculo del MSI
+        msi = -1;
+        for (int i = 0; i < capacity; i++) {
+            if (so[i]) {
+                msi = i;
+            }
+        }
+
         if (encontroCamino) {
             bfr.setValue(BFRForPath(kspath, totalCapacity, core)); // Calcula el BFR para el GraphPath actual
             bfr.setPath(kspath);
             bfr.setCore(core);
+            bfr.setMsi(msi);
             System.out.println("Imprimiendo BFR: " + bfr.getValue() + " nucleo: " + core);
             return bfr;
         }

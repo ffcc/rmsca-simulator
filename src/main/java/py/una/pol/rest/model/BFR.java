@@ -8,14 +8,17 @@ public class BFR {
     private int indexFs;
     private int core;
 
+    private int msi;
+
     public BFR() {
     }
 
-    public BFR(GraphPath path, Double value, int indexFs, int core) {
+    public BFR(GraphPath path, Double value, int indexFs, int core, int msi) {
         this.path = path;
         this.value = value;
         this.indexFs = indexFs;
         this.core = core;
+        this.msi = msi;
     }
 
     public GraphPath getPath() {
@@ -48,6 +51,14 @@ public class BFR {
 
     public void setCore(int core) {
         this.core = core;
+    }
+
+    public int getMsi() {
+        return msi;
+    }
+
+    public void setMsi(int msi) {
+        this.msi = msi;
     }
 }
 

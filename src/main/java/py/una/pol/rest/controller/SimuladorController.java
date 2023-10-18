@@ -130,6 +130,10 @@ public class SimuladorController {
                         // Ordena la lista de BFR en orden ascendente
                         listaBfr.sort(Comparator.comparingDouble(BFR::getValue));
 
+                        // Ordena la lista de BFR en orden ascendente según el valor de BFR y, en caso de empate, el MSI.
+                        listaBfr.sort(Comparator.comparing(BFR::getValue).thenComparing(BFR::getMsi));
+
+
                         // Obtén el BFR más pequeño (el primero en la lista)
                         BFR mejorBfr = listaBfr.get(0);
 
