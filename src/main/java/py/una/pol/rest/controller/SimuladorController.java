@@ -185,6 +185,7 @@ public class SimuladorController {
         System.out.println("Resumen general del simulador");
         System.out.println("Cantidad de demandas: " + demandsQ);
         System.out.println("Cantidad de bloqueos: " + blocksQ);
+        System.out.println("FSMAX: " + fsMax);
         //System.out.println("Cantidad de defragmentaciones: " + defragsQ);
         //System.out.println("Cantidad de desfragmentaciones fallidas: " + defragsF);
         System.out.println("Fin Simulación");
