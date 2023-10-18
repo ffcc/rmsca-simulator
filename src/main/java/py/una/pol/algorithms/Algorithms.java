@@ -72,7 +72,7 @@ public class Algorithms {
             bfr.setValue(BFRForPath(kspath, totalCapacity, core)); // Calcula el BFR para el GraphPath actual
             bfr.setPath(kspath);
             bfr.setCore(core);
-            System.out.println("Imprimiendo BFR: " + bfr.getValue() + " indice: " + core);
+            System.out.println("Imprimiendo BFR: " + bfr.getValue() + " nucleo: " + core);
             return bfr;
         }
 
@@ -1019,6 +1019,7 @@ public class Algorithms {
         for (FrecuencySlot slot : fs) {
             if (slot.isFree()) {
                 freeBlockSize++;
+                fsFree++;
                 inFreeBlock = true;
             } else {
                 if (inFreeBlock) {
@@ -1026,7 +1027,6 @@ public class Algorithms {
                     freeBlockSize = 0;
                     inFreeBlock = false;
                 }
-                fsFree++;
             }
         }
 
