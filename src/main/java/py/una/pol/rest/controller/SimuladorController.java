@@ -79,7 +79,7 @@ public class SimuladorController {
             response.setCantRutasActivas(establishedRoutes.size());
             response.setOrigen(demand.getDemand().getSource());
             response.setDestino(demand.getDemand().getDestination());
-            System.out.println("Demanda: " + response.getNroDemanda() + ", Origen: " + demand.getDemand().getSource() + ", Destino: " + demand.getDemand().getDestination() + ", Distancia: " + demand.getDistance() + ", Cantidad de rutas en uso: " + establishedRoutes.size());
+            System.out.println("Demanda: " + response.getNroDemanda() + ", Origen: " + demand.getDemand().getSource() + ", Destino: " + demand.getDemand().getDestination() + ", Cantidad de rutas en uso: " + establishedRoutes.size());
             demandsQ++;
             kspaths.clear();
 
@@ -128,10 +128,10 @@ public class SimuladorController {
 
                     if (!listaBfr.isEmpty()) {
                         // Ordena la lista de BFR en orden ascendente
-                        listaBfr.sort(Comparator.comparingDouble(BFR::getValue));
+                        listaBfr.sort(Comparator.comparingDouble(BFR::getMsi));
 
-                        // Ordena la lista de BFR en orden ascendente según el valor de BFR y, en caso de empate, el MSI.
-                        listaBfr.sort(Comparator.comparing(BFR::getValue).thenComparing(BFR::getMsi));
+                        // Ordena la lista de BFR en orden ascendente según el valor de MSI y, en caso de empate, el BFR.
+                        listaBfr.sort(Comparator.comparing(BFR::getMsi).thenComparing(BFR::getValue));
 
 
                         // Obtén el BFR más pequeño (el primero en la lista)
@@ -139,7 +139,7 @@ public class SimuladorController {
 
                         // Agregar aqui si cumple con el umbral de la diafonia
 
-                        System.out.println("Elegimos el BFR: " + mejorBfr.getValue() + ", y el MSI: " + mejorBfr.getMsi() + " en nucleo: " + mejorBfr.getCore());
+                        System.out.println("Elegimos el BFR: " + mejorBfr.getValue() + ", y el MSI: " + mejorBfr.getMsi() + " en nucleo: " + mejorBfr.getCore() + ", Distancia: " + mejorBfr.getPath().getWeight());
 
                         EstablisedRoute establisedRoute = new EstablisedRoute(mejorBfr.getPath().getEdgeList(), mejorBfr.getIndexFs(), demand.getDemand().getFs(), demand.getDemand().getSource(), demand.getDemand().getDestination(), mejorBfr.getCore());
 
@@ -151,7 +151,6 @@ public class SimuladorController {
                         //imprimimos el path de origen a destino
                         //((EstablisedRoute) establisedRoute).printDemandNodes();
                         response.setPath(((EstablisedRoute) establisedRoute).printDemandNodes());
-                        //System.out.println("Ruta establecida: { origen: " + demand.getSource() + " destino: " + demand.getDestination() + " en el Core: " + core + " utilizando " + demand.getFs() + " FS [ " + ((EstablisedRoute) establisedRoute).getFsIndexBegin() + " - "+ ((EstablisedRoute) establisedRoute).getFsIndexEnd() + "] } ");
                         System.out.println("Imprimiendo BFR de la Red: " + Algorithms.BFR(net, options.getCapacity()));
 
 
@@ -251,25 +250,6 @@ public class SimuladorController {
         }
 
         return null;
-    }
-
-    private static int findMaxDistance(Graph<Integer, Link> network) {
-        int maxDistance = Integer.MIN_VALUE;
-
-        for (Integer sourceNode : network.vertexSet()) {
-            for (Integer targetNode : network.vertexSet()) {
-                if (!sourceNode.equals(targetNode)) {
-                    DijkstraShortestPath<Integer, Link> shortestPath = new DijkstraShortestPath<>(network);
-                    double distance = shortestPath.getPathWeight(sourceNode, targetNode);
-
-                    if (distance > maxDistance) {
-                        maxDistance = (int) distance;
-                    }
-                }
-            }
-        }
-
-        return maxDistance;
     }
 
     public static void writeResponsesToCSV(List<Response> responses) {

@@ -1,5 +1,6 @@
 package py.una.pol.rest.model;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class EstablisedRoute {
@@ -79,28 +80,31 @@ public class EstablisedRoute {
     }
 
     public String printDemandNodes() {
-        StringBuilder pathString = new StringBuilder("PATH: " + from);
-
-        int previousNode = from;
+        List<Integer> pathNodes = new ArrayList<>();
+        pathNodes.add(from);
 
         for (Link link : path) {
-            int currentNode = link.getTo();
-            if (previousNode != currentNode) {
-                pathString.append(" --> ").append(currentNode);
-                previousNode = currentNode;
+            if (link.getFrom() == pathNodes.get(pathNodes.size() - 1)) {
+                pathNodes.add(link.getTo());
+            } else {
+                // Si el enlace no sigue el orden, agrégalo al principio para invertirlo
+                pathNodes.add(0, link.getFrom());
             }
         }
 
-        // Asegurarse de que el último nodo coincida con 'to' en EstablisedRoute
-        if (!path.isEmpty()) {
-            Link lastLink = path.get(path.size() - 1);
-            if (lastLink.getTo() != to) {
-                pathString.append(" --> ").append(to);
+        StringBuilder pathString = new StringBuilder("PATH: ");
+        for (int i = 0; i < pathNodes.size(); i++) {
+            pathString.append(pathNodes.get(i));
+            if (i < pathNodes.size() - 1) {
+                pathString.append(" --> ");
             }
         }
 
         System.out.println(pathString.toString()); // Imprime el camino
         return pathString.toString(); // Retorna el camino como una cadena
     }
+
+
+
 
 }
