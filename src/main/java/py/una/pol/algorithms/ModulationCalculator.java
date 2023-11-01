@@ -50,11 +50,11 @@ public class ModulationCalculator {
 
         if ("BPSK".equals(modulation)) {
             // Rangos de bitrate para BPSK
-            bitrates = new int[]{10, 40, 100};
+            bitrates = new int[]{10, 40};
         } else if ("QPSK".equals(modulation) || "8-QAM".equals(modulation)) {
             bitrates = new int[]{40, 100};
         } else {
-            bitrates = new int[]{40, 100, 400};
+            bitrates = new int[]{40, 100};
         }
 
         // Elegir aleatoriamente un bitrate dentro del rango

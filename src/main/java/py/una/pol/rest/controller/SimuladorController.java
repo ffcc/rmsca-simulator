@@ -35,6 +35,7 @@ public class SimuladorController {
         List<List<GraphPath<Integer, Link>>> kspList = new ArrayList<>();
         List<BFR> listaBfr = new ArrayList<>();
         int fsMax = 0;
+        int previousFSMax = 0;
         int demandsQ = 0, blocksQ = 0;
 
         //se generan aleatoriamente las demandas, de acuerdo a la cantidad proporcionadas por parámetro
@@ -73,6 +74,7 @@ public class SimuladorController {
         for (DemandDistancePair demand : demandDistances) {
             Response response = new Response();
             //boolean blocked = false;
+            previousFSMax = fsMax;
 
             System.out.println("-------PROCESANDO NUEVA DEMANDA----------");
             response.setNroDemanda(demandsQ);
@@ -165,6 +167,7 @@ public class SimuladorController {
                         demand.getDemand().setBlocked(true);
                         //slotsBlocked += demand.getFs();
                         blocksQ++;
+                        fsMax = previousFSMax; // Restablecer FSMAX al valor anterior
 
                         break;
                     }
@@ -192,7 +195,8 @@ public class SimuladorController {
         // Llama al método para escribir en el archivo CSV
         writeResponsesToCSV(responses);
 
-        printFSStatus(options, establishedRoutes); // Llama al método para imprimir el estado de ocupación de los FS en cada núcleo
+        // Al final de tu método simular
+        printFSEntryStatus(net, options.getCores(), options.getCapacity());
 
         // Al final de tu método simular
         countFreeFS(net, options.getCores());
@@ -297,6 +301,7 @@ public class SimuladorController {
         }
     }
 
+
     private String obtenerDatosParaNucleo(List<Response> responses, int capacity) {
         StringBuilder datos = new StringBuilder();
         for (Response response : responses) {
@@ -370,6 +375,19 @@ public class SimuladorController {
     }
 
 
+    public void printFSEntryStatus(Graph<Integer, Link> net, int cores, int capacity) {
+        for (Link link : net.edgeSet()) {
+            System.out.println("Enlace DE: " + link.getFrom() + " A: " + link.getTo());
+            for (int coreIndex = 0; coreIndex < cores; coreIndex++) {
+                FrecuencySlot[] coreSlots = link.getCores().get(coreIndex).getFs().toArray(new FrecuencySlot[0]);
+                System.out.print("Núcleo " + coreIndex + ": ");
+                for (int fsIndex = 0; fsIndex < capacity; fsIndex++) {
+                    System.out.print(coreSlots[fsIndex].isFree() ? "░" : "█");
+                }
+                System.out.println();
+            }
+        }
+    }
 
 
 
