@@ -194,6 +194,10 @@ public class SimuladorController {
 
         printFSStatus(options, establishedRoutes); // Llama al método para imprimir el estado de ocupación de los FS en cada núcleo
 
+        // Al final de tu método simular
+        countFreeFS(net, options.getCores());
+
+
         //System.out.println(obtenerDatosParaNucleo(responses, options.getCapacity()));
 
 
@@ -345,6 +349,28 @@ public class SimuladorController {
         barra.append("]");
         return barra.toString();
     }
+
+    public void countFreeFS(Graph<Integer, Link> net, int cores) {
+        int totalFreeFS = 0;
+
+        for (Link link : net.edgeSet()) {
+            for (int core = 0; core < cores; core++) {
+                int freeFSOnLink = 0;
+                for (FrecuencySlot fs : link.getCores().get(core).getFs()) {
+                    if (fs.isFree()) {
+                        freeFSOnLink++;
+                    }
+                }
+                totalFreeFS += freeFSOnLink;
+                System.out.println("Enlace DE: " + link.getFrom() + ", A: " + link.getTo() + ", Núcleo " + core + ": FS Libres = " + freeFSOnLink);
+            }
+        }
+
+        System.out.println("Total de FS Libres en la Red: " + totalFreeFS);
+    }
+
+
+
 
 
 }
