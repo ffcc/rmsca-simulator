@@ -87,8 +87,8 @@ public class EstablisedRoute {
             if (link.getFrom() == pathNodes.get(pathNodes.size() - 1)) {
                 pathNodes.add(link.getTo());
             } else {
-                // Si el enlace no sigue el orden, agrégalo al principio para invertirlo
-                pathNodes.add(0, link.getFrom());
+                // Si el enlace no sigue el orden, agrégalo al final para mantener el orden
+                pathNodes.add(link.getFrom());
             }
         }
 
@@ -103,8 +103,6 @@ public class EstablisedRoute {
         System.out.println(pathString.toString()); // Imprime el camino
         return pathString.toString(); // Retorna el camino como una cadena
     }
-
-
 
 
 }
