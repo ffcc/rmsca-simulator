@@ -1,0 +1,60 @@
+{
+    "network": [
+      {
+        "connections": [1,2,3],
+        "distance": [550,300,500]
+      },
+      {
+        "connections": [2,7],
+        "distance": [800,1400]
+      },
+      {
+        "connections": [5],
+        "distance": [800,1000]
+      },
+      {
+        "connections": [4,10],
+        "distance": [300,1200]
+      },
+      {
+        "connections": [5,6],
+        "distance": [550,400]
+      },
+      {
+        "connections": [8,11],
+        "distance": [600,1000]
+      },
+      {
+        "connections": [7],
+        "distance": [350]
+      },
+      {
+        "connections": [9],
+        "distance": [350]
+      },
+      {
+        "connections": [9],
+        "distance": [450]
+      },
+      {
+        "connections": [12,13],
+        "distance": [250,250]
+      },
+      {
+        "connections": [12,13],
+        "distance": [400,500]
+      },
+      {
+        "connections": [12,13],
+        "distance": [250,150]
+      },
+      {
+        "connections": [],
+        "distance": []
+      },
+      {
+        "connections": [],
+        "distance": []
+      }
+    ]
+  }

@@ -1,0 +1,101 @@
+{
+    "network": [
+      {
+        "connections": [1,5],
+        "distance": [400,500]
+      },
+      {
+        "connections": [2,5],
+        "distance": [550,475]
+      },
+      {
+        "connections": [3,4,6],
+        "distance": [125,500,500]
+      },
+      {
+        "connections": [4,6],
+        "distance": [400,425]
+      },
+      {
+        "connections": [7],
+        "distance": [600]
+      },
+      {
+        "connections": [6,8,10],
+        "distance": [500,600,950]
+      },
+      {
+        "connections": [7,8],
+        "distance": [625,500]
+      },
+      {
+        "connections": [9],
+        "distance": [450]
+      },
+      {
+        "connections": [9,10,11],
+        "distance": [500,700,500]
+      },
+      {
+        "connections": [12,13],
+        "distance": [475,425]
+      },
+      {
+        "connections": [11,14,18],
+        "distance": [450,650,1400]
+      },
+      {
+        "connections": [12,15],
+        "distance": [450,500]
+      },
+      {
+        "connections": [13,16],
+        "distance": [325,550]
+      },
+      {
+        "connections": [17],
+        "distance": [600]
+      },
+      {
+        "connections": [15,19],
+        "distance": [400,650]
+      },
+      {
+        "connections": [16,20,21],
+        "distance": [500,500,400]
+      },
+      {
+        "connections": [17,21,22],
+        "distance": [400,425,500]
+      },
+      {
+        "connections": [23],
+        "distance": [450]
+      },
+      {
+        "connections": [19],
+        "distance": [600]
+      },
+      {
+        "connections": [20],
+        "distance": [350]
+      },
+      {
+        "connections": [21],
+        "distance": [150]
+      },
+      {
+        "connections": [22],
+        "distance": [300]
+      },
+      {
+        "connections": [23],
+        "distance": [450]
+      },
+      {
+        "connections": [],
+        "distance": []
+      }
+    ]
+  }
+  
