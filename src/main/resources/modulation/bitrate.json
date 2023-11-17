@@ -1,86 +1,29 @@
 {
   "10": {
-    "BPSK": {
-      "ancho_de_banda": 12.5,
-      "cantidad_de_fs": 1
-    }
+    "BPSK": { "anchoDeBanda": 12.5, "cantidadDeFs": 1 }
   },
   "40": {
-    "BPSK": {
-      "ancho_de_banda": 50,
-      "cantidad_de_fs": 4
-    },
-    "QPSK": {
-      "ancho_de_banda": 25,
-      "cantidad_de_fs": 2
-    },
-    "8-QAM": {
-      "ancho_de_banda": 25,
-      "cantidad_de_fs": 2
-    },
-    "16-QAM": {
-      "ancho_de_banda": 12.5,
-      "cantidad_de_fs": 1
-    },
-    "32-QAM": {
-      "ancho_de_banda": 12.5,
-      "cantidad_de_fs": 1
-    },
-    "64-QAM": {
-      "ancho_de_banda": 12.5,
-      "cantidad_de_fs": 1
-    }
+    "BPSK": { "anchoDeBanda": 50, "cantidadDeFs": 4 },
+    "QPSK": { "anchoDeBanda": 25, "cantidadDeFs": 2 },
+    "8-QAM": { "anchoDeBanda": 25, "cantidadDeFs": 2 },
+    "16-QAM": { "anchoDeBanda": 12.5, "cantidadDeFs": 1 },
+    "32-QAM": { "anchoDeBanda": 12.5, "cantidadDeFs": 1 },
+    "64-QAM": { "anchoDeBanda": 12.5, "cantidadDeFs": 1 }
   },
   "100": {
-    "BPSK": {
-      "ancho_de_banda": 100,
-      "cantidad_de_fs": 8
-    },
-    "QPSK": {
-      "ancho_de_banda": 50,
-      "cantidad_de_fs": 4
-    },
-    "8-QAM": {
-      "ancho_de_banda": 37.5,
-      "cantidad_de_fs": 3
-    },
-    "16-QAM": {
-      "ancho_de_banda": 25,
-      "cantidad_de_fs": 2
-    },
-    "32-QAM": {
-      "ancho_de_banda": 25,
-      "cantidad_de_fs": 2
-    },
-    "64-QAM": {
-      "ancho_de_banda": 25,
-      "cantidad_de_fs": 2
-    }
+    "BPSK": { "anchoDeBanda": 100, "cantidadDeFs": 8 },
+    "QPSK": { "anchoDeBanda": 50, "cantidadDeFs": 4 },
+    "8-QAM": { "anchoDeBanda": 37.5, "cantidadDeFs": 3 },
+    "16-QAM": { "anchoDeBanda": 25, "cantidadDeFs": 2 },
+    "32-QAM": { "anchoDeBanda": 25, "cantidadDeFs": 2 },
+    "64-QAM": { "anchoDeBanda": 25, "cantidadDeFs": 2 }
   },
   "400": {
-    "BPSK": {
-      "ancho_de_banda": 400,
-      "cantidad_de_fs": 32
-    },
-    "QPSK": {
-      "ancho_de_banda": 200,
-      "cantidad_de_fs": 16
-    },
-    "8-QAM": {
-      "ancho_de_banda": 137.5,
-      "cantidad_de_fs": 11
-    },
-    "16-QAM": {
-      "ancho_de_banda": 100,
-      "cantidad_de_fs": 8
-    },
-    "32-QAM": {
-      "ancho_de_banda": 87.5,
-      "cantidad_de_fs": 7
-    },
-    "64-QAM": {
-      "ancho_de_banda": 75,
-      "cantidad_de_fs": 6
-    }
-  },
+    "BPSK": { "anchoDeBanda": 400, "cantidadDeFs": 32 },
+    "QPSK": { "anchoDeBanda": 200, "cantidadDeFs": 16 },
+    "8-QAM": { "anchoDeBanda": 137.5, "cantidadDeFs": 11 },
+    "16-QAM": { "anchoDeBanda": 100, "cantidadDeFs": 8 },
+    "32-QAM": { "anchoDeBanda": 87.5, "cantidadDeFs": 7 },
+    "64-QAM": { "anchoDeBanda": 75, "cantidadDeFs": 6 }
+  }
 }

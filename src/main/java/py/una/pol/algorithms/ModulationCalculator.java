@@ -1,9 +1,13 @@
 package py.una.pol.algorithms;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
+import py.una.pol.rest.model.BitrateInfoDTO;
 import py.una.pol.rest.model.DemandDistancePair;
 import py.una.pol.rest.model.ModulationInfo;
+import py.una.pol.rest.model.ModulationInfoDTO;
 
 import java.io.IOException;
 import java.util.*;
@@ -41,43 +45,62 @@ public class ModulationCalculator {
         return selectedModulation;
     }
 
-    public void calculateFS(DemandDistancePair demand) throws IOException {
-        // Obtener la modulación adecuada para la demanda
-        String modulation = calculateModulation(demand);
+    public boolean calculateFS(DemandDistancePair demand) {
+        try {
+            // Obtener la modulación adecuada para la demanda
+            String modulation = calculateModulation(demand);
 
-        // Definir rangos de bitrate según la modulación
-        int[] bitrates;
+            // Elegir aleatoriamente un bitrate dentro del rango
+            Random random = new Random();
+            int selectedBitrate = demand.getDemand().getBitRate();
 
-        if ("BPSK".equals(modulation)) {
-            // Rangos de bitrate para BPSK
-            bitrates = new int[]{10, 40};
-        } else if ("QPSK".equals(modulation) || "8-QAM".equals(modulation)) {
-            bitrates = new int[]{40, 100};
-        } else {
-            bitrates = new int[]{40, 100};
+            // Cargar el archivo JSON en un DTO
+            String bitrateFileName = "modulation/bitrate.json";
+            String bitrateJsonStr = new String(ModulationCalculator.class.getClassLoader().getResourceAsStream(bitrateFileName).readAllBytes());
+            ObjectMapper objectMapper = new ObjectMapper();
+            BitrateInfoDTO bitrateInfo = objectMapper.readValue(bitrateJsonStr, BitrateInfoDTO.class);
+
+            // Buscar la cantidad de FS correspondiente al bitrate seleccionado y la modulación
+            ModulationInfoDTO modulationInfo = null;
+
+            // Verificar si el bitrate seleccionado está presente en el DTO
+            if (bitrateInfo.getBitrateMap().containsKey(String.valueOf(selectedBitrate))) {
+                // Verificar si la modulación seleccionada está presente en el DTO para el bitrate dado
+                Map<String, ModulationInfoDTO> modulationMap = bitrateInfo.getBitrateMap().get(String.valueOf(selectedBitrate));
+                if (modulationMap.containsKey(modulation)) {
+                    modulationInfo = modulationMap.get(modulation);
+                }
+            }
+
+            if (modulationInfo != null) {
+                int fs = modulationInfo.getCantidadDeFs();
+
+                if (fs <= 0 || fs > 8) {
+                    // No hay FS disponibles, reject demand
+                    return false;
+                }
+
+                // Establecer la modulación y la cantidad de FS en la demanda
+                demand.setModulation(modulation);
+                demand.getDemand().setFs(fs);
+
+                System.out.println("bitrate: " + selectedBitrate + ", Modulacion: " + modulation + " y FS: " + fs);
+
+                return true;
+            } else {
+                // La combinación específica no está presente en el DTO
+                System.out.println("Combinación de bitrate y modulación no encontrada en el DTO");
+                return false;
+            }
+        } catch (IOException e) {
+            // Manejar la excepción de lectura del archivo JSON
+            System.out.println("Error al leer el archivo JSON: " + e.getMessage());
+            return false;
         }
-
-        // Elegir aleatoriamente un bitrate dentro del rango
-        Random random = new Random();
-        int selectedBitrate = bitrates[random.nextInt(bitrates.length)];
-
-        // Cargar el archivo JSON
-        String bitrateFileName = "modulation/bitrate.json";
-        String bitrateJsonStr = new String(ModulationCalculator.class.getClassLoader().getResourceAsStream(bitrateFileName).readAllBytes());
-        JSONObject bitrateJson = new JSONObject(bitrateJsonStr);
-
-        // Buscar la cantidad de FS correspondiente al bitrate seleccionado y la modulación
-        JSONObject modulationInfo = bitrateJson.getJSONObject(String.valueOf(selectedBitrate));
-        int fs = modulationInfo.getJSONObject(modulation).getInt("cantidad_de_fs");
-
-        // Establecer la modulación y la cantidad de FS en la demanda
-        demand.setModulation(modulation);
-        demand.getDemand().setFs(fs);
-        demand.getDemand().setBitRate(selectedBitrate);
-
-        System.out.println("bitrate: " + selectedBitrate + ", Modulacion: " + modulation + " y FS: " + fs);
-
     }
+
+
+
 
     private List<ModulationInfo> parseJsonToModulationInfoList(String jsonStr) {
         List<ModulationInfo> modulationInfoList = new ArrayList<>();

@@ -16,7 +16,7 @@ public class Utils {
 
     public static List<Demand> generateDemands(int demandasQuantity, int fsMin, int fsMax, int cantNodos){
         int i, j, source, destination, fs, randomBitRate;
-        //int[] bitRates = {10, 40, 100, 400, 1000};
+        int[] bitRates = {10, 40, 100, 400};
 
         List<Demand> demands = new ArrayList<>();
         Random rand;
@@ -26,14 +26,34 @@ public class Utils {
             source = rand.nextInt(cantNodos);
             destination = rand.nextInt(cantNodos);
             //fs = (int) (Math.random() * (fsMax-fsMin+1)) + fsMin;
-            //randomBitRate = bitRates[rand.nextInt(bitRates.length)];
+            randomBitRate = bitRates[rand.nextInt(bitRates.length)];
             while (source == destination) {
                 destination = rand.nextInt(cantNodos);
             }
-            demands.add(new Demand(source, destination));
+            demands.add(new Demand(source, destination, randomBitRate));
         }
         return demands;
     }
+
+    public static Demand generateSingleDemand(int cantNodos) {
+        int source, destination, randomBitRate;
+        int[] bitRates = {10, 40, 100, 400};
+
+        Random rand = new Random();
+        source = rand.nextInt(cantNodos);
+        destination = rand.nextInt(cantNodos);
+
+        // Ensure source and destination are different
+        while (source == destination) {
+            destination = rand.nextInt(cantNodos);
+        }
+
+        // Generate a random bit rate from the available options
+        randomBitRate = bitRates[rand.nextInt(bitRates.length)];
+
+        return new Demand(source, destination, randomBitRate);
+    }
+
 
     public static int poisson(int lambda) {
         int b, bFact;

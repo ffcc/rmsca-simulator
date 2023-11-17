@@ -18,7 +18,6 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Method;
 import java.util.*;
 
 @RestController
@@ -32,8 +31,7 @@ public class SimuladorController {
         List<EstablisedRoute> establishedRoutes = new ArrayList<>();
         //se crea la topoligia con los parámetros seleccionados
         Graph<Integer, Link> net = createTopology(options.getTopology(), options.getCores(), options.getFsWidth(), options.getCapacity());
-        List<List<GraphPath<Integer, Link>>> kspList = new ArrayList<>();
-        List<BFR> listaBfr = new ArrayList<>();
+        List<BFR> listaBfr;
         int fsMax = 0;
         int previousFSMax = 0;
         int demandsQ = 0, blocksQ = 0;
@@ -50,17 +48,47 @@ public class SimuladorController {
 
         //ORDENAMOS LAS DEMANDAS ASCENDENTE - DESCENDENTE - ALEATORIO NO HACER NADA
         List<DemandDistancePair> demandDistances = new ArrayList<>();
+        int rejectedDemandsCount = 0;
 
-        for (Demand demand : demands) {
-            int source = demand.getSource();
-            int destination = demand.getDestination();
+        List<Demand> demandsToRemove;
+        List<Demand> demandsToAdd;
 
-            GraphPath<Integer, Link> shortestPath = djkt.getPath(source, destination);
-            double distance = shortestPath.getWeight();
+        do {
+            demandsToRemove = new ArrayList<>();
+            demandsToAdd = new ArrayList<>();
+            rejectedDemandsCount = 0;
 
-            demandDistances.add(new DemandDistancePair(demand, distance, ""));
-        }
-        PATH:
+            for (Demand demand : demands) {
+                int source = demand.getSource();
+                int destination = demand.getDestination();
+
+                GraphPath<Integer, Link> shortestPath = djkt.getPath(source, destination);
+                double distance = shortestPath.getWeight();
+
+                DemandDistancePair demandDistancePair = new DemandDistancePair(demand, distance, "");
+
+                // Calcular la modulación para una demanda con una distancia específica
+                ModulationCalculator modulationCalculator = new ModulationCalculator();
+                boolean fsCalculated = modulationCalculator.calculateFS(demandDistancePair);
+
+                if (!fsCalculated) {
+                    // FS calculation failed, regenerate demand
+                    rejectedDemandsCount++;
+                    demandsToRemove.add(demand);
+                    demandsToAdd.add(Utils.generateSingleDemand(net.vertexSet().size()));
+                } else {
+                    demandDistances.add(demandDistancePair);
+                }
+            }
+
+            // Remove and Add rejected demands after the iteration
+            demands.removeAll(demandsToRemove);
+            demands.addAll(demandsToAdd);
+
+        } while (demandsToRemove.size() > 0 && demands.size() < options.getDemandsQuantity());
+
+        System.out.println("Número de demandas rechazadas: " + rejectedDemandsCount + " Total de demandas: " + demands.size());
+
 
         // Ordenar en función del parámetro ascendente, descendente y aleatorio seria como viene
         if (options.getSortingDemands().equalsIgnoreCase("ASC")) {
@@ -72,8 +100,11 @@ public class SimuladorController {
         //Procesamos las demandas
         List<Response> responses = new ArrayList<>();
         for (DemandDistancePair demand : demandDistances) {
+
             Response response = new Response();
-            //boolean blocked = false;
+            response.setBitrate(demand.getDemand().getBitRate());
+            response.setModulation(demand.getModulation());
+            response.setFs(demand.getDemand().getFs());
             previousFSMax = fsMax;
 
             System.out.println("-------PROCESANDO NUEVA DEMANDA----------");
@@ -99,13 +130,6 @@ public class SimuladorController {
                     kspaths.add(path);
                 }
             }
-
-            //Calcular la modulación para una demanda con una distancia específica
-            ModulationCalculator modulationCalculator = new ModulationCalculator();
-            modulationCalculator.calculateFS(demand);
-            response.setBitrate(demand.getDemand().getBitRate());
-            response.setModulation(demand.getModulation());
-            response.setFs(demand.getDemand().getFs());
 
             //busqueda de caminos disponibles, para establecer los enlaces
             try {
