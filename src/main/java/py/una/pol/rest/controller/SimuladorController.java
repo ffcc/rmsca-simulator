@@ -4,13 +4,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jgrapht.Graph;
 import org.jgrapht.GraphPath;
-import org.jgrapht.alg.shortestpath.DijkstraShortestPath;
-import org.jgrapht.alg.shortestpath.KShortestSimplePaths;
 import org.jgrapht.graph.SimpleWeightedGraph;
 import org.springframework.web.bind.annotation.*;
 import py.una.pol.algorithms.Algorithms;
 import py.una.pol.algorithms.ModulationCalculator;
+import py.una.pol.algorithms.ShortestPathFinder;
 import py.una.pol.rest.model.*;
+import py.una.pol.utils.DemandSorter;
+import py.una.pol.utils.DemandsGenerator;
 import py.una.pol.utils.ResourceReader;
 import py.una.pol.utils.Utils;
 
@@ -35,96 +36,51 @@ public class SimuladorController {
         int fsMax = 0;
         int previousFSMax = 0;
         int demandsQ = 0, blocksQ = 0;
-
-        //se generan aleatoriamente las demandas, de acuerdo a la cantidad proporcionadas por parámetro
-        demands = Utils.generateDemands(options.getDemandsQuantity(), options.getFsRangeMin(), options.getFsRangeMax(), net.vertexSet().size());
-
-        //se carga la red en ksp - dijkstra, con todos los nodos, pares de nodos
-        KShortestSimplePaths ksp = new KShortestSimplePaths(net);
-        DijkstraShortestPath<Integer, Link> djkt = new DijkstraShortestPath<>(net);
         //colector que va a almacenar los k caminos mas cortos
         List<GraphPath<Integer, Link>> kspaths = new ArrayList<>();
+        //buscador de caminos mas cortos DIJKSTRA - KSP
+        ShortestPathFinder shortestPathFinder = new ShortestPathFinder(net);
 
 
-        //ORDENAMOS LAS DEMANDAS ASCENDENTE - DESCENDENTE - ALEATORIO NO HACER NADA
-        List<DemandDistancePair> demandDistances = new ArrayList<>();
-        int rejectedDemandsCount = 0;
-
-        List<Demand> demandsToRemove;
-        List<Demand> demandsToAdd;
-
-        do {
-            demandsToRemove = new ArrayList<>();
-            demandsToAdd = new ArrayList<>();
-            rejectedDemandsCount = 0;
-
-            for (Demand demand : demands) {
-                int source = demand.getSource();
-                int destination = demand.getDestination();
-
-                GraphPath<Integer, Link> shortestPath = djkt.getPath(source, destination);
-                double distance = shortestPath.getWeight();
-
-                DemandDistancePair demandDistancePair = new DemandDistancePair(demand, distance, "");
-
-                // Calcular la modulación para una demanda con una distancia específica
-                ModulationCalculator modulationCalculator = new ModulationCalculator();
-                boolean fsCalculated = modulationCalculator.calculateFS(demandDistancePair);
-
-                if (!fsCalculated) {
-                    // FS calculation failed, regenerate demand
-                    rejectedDemandsCount++;
-                    demandsToRemove.add(demand);
-                    demandsToAdd.add(Utils.generateSingleDemand(net.vertexSet().size()));
-                } else {
-                    demandDistances.add(demandDistancePair);
-                }
-            }
-
-            // Remove and Add rejected demands after the iteration
-            demands.removeAll(demandsToRemove);
-            demands.addAll(demandsToAdd);
-
-        } while (demandsToRemove.size() > 0 && demands.size() < options.getDemandsQuantity());
-
-        System.out.println("Número de demandas rechazadas: " + rejectedDemandsCount + " Total de demandas: " + demands.size());
+        //se generan aleatoriamente las demandas, de acuerdo a la cantidad proporcionadas por parámetro
+        demands = DemandsGenerator.generateAndValidateDemands(options.getDemandsQuantity(), net, shortestPathFinder);
 
 
         // Ordenar en función del parámetro ascendente, descendente y aleatorio seria como viene
         if (options.getSortingDemands().equalsIgnoreCase("ASC")) {
-            Collections.sort(demandDistances); // Orden ascendente (por defecto)
+            DemandSorter.sortByDistanceAscending(demands); // Orden ascendente (por defecto)
         } else if (options.getSortingDemands().equalsIgnoreCase("DESC")) {
-            Collections.sort(demandDistances, Collections.reverseOrder()); // Orden descendente
+            DemandSorter.sortByDistanceDescending(demands); // Orden descendente
         }
 
         //Procesamos las demandas
         List<Response> responses = new ArrayList<>();
-        for (DemandDistancePair demand : demandDistances) {
+        for (Demand demand : demands) {
 
             Response response = new Response();
-            response.setBitrate(demand.getDemand().getBitRate());
+            response.setBitrate(demand.getBitRate());
             response.setModulation(demand.getModulation());
-            response.setFs(demand.getDemand().getFs());
+            response.setFs(demand.getFs());
             previousFSMax = fsMax;
 
             System.out.println("-------PROCESANDO NUEVA DEMANDA----------");
             response.setNroDemanda(demandsQ);
             response.setCantRutasActivas(establishedRoutes.size());
-            response.setOrigen(demand.getDemand().getSource());
-            response.setDestino(demand.getDemand().getDestination());
-            System.out.println("Demanda: " + response.getNroDemanda() + ", Origen: " + demand.getDemand().getSource() + ", Destino: " + demand.getDemand().getDestination() + ", Cantidad de rutas en uso: " + establishedRoutes.size());
+            response.setOrigen(demand.getSource());
+            response.setDestino(demand.getDestination());
+            System.out.println("Demanda: " + response.getNroDemanda() + ", Origen: " + demand.getSource() + ", Destino: " + demand.getDestination() + ", Cantidad de rutas en uso: " + establishedRoutes.size());
             demandsQ++;
             kspaths.clear();
 
             //se ejecuta dijkstra - ksp como sortest-Algorithm
             if (options.getSortestAlg().equals("Dijkstra")) {
                 // Retorna el camino más corto de fuente a destino
-                GraphPath<Integer, Link> shortestPath = djkt.getPath(demand.getDemand().getSource(), demand.getDemand().getDestination());
+                GraphPath<Integer, Link> shortestPath = shortestPathFinder.getShortestPath(demand.getSource(), demand.getDestination());
                 // Agrega el camino a la lista kspaths
                 kspaths.add(shortestPath);
             } else {
                 // Retorna los 5 caminos más cortos de fuente a destino
-                List<GraphPath<Integer, Link>> kShortestPaths = ksp.getPaths(demand.getDemand().getSource(), demand.getDemand().getDestination(), 5);
+                List<GraphPath<Integer, Link>> kShortestPaths = shortestPathFinder.getKShortestPaths(demand.getSource(), demand.getDestination(), 5);
                 for (GraphPath<Integer, Link> path : kShortestPaths) {
                     // Agrega cada camino a la lista kspaths
                     kspaths.add(path);
@@ -137,15 +93,15 @@ public class SimuladorController {
                     listaBfr = new ArrayList<>();
                     //iteramos los mejores caminos de origen a destino
                     for (GraphPath<Integer, Link> path : kspaths) {
-                        if (fsMax < demand.getDemand().getFs()) {
-                            fsMax = demand.getDemand().getFs();
+                        if (fsMax < demand.getFs()) {
+                            fsMax = demand.getFs();
                         }
 
                         //iteramos los nucleos
                         for (int i = 0; i < options.getCores(); i++) {
                             //cumple principios de eon
                             //calcular bfr
-                            listaBfr.add(Algorithms.customRsa(net, path, demand.getDemand(), fsMax, i, options.getCapacity()));
+                            listaBfr.add(Algorithms.customRsa(net, path, demand, fsMax, i, options.getCapacity()));
                         }
                     }
 
@@ -167,7 +123,7 @@ public class SimuladorController {
 
                         System.out.println("Elegimos el BFR: " + mejorBfr.getValue() + ", y el MSI: " + mejorBfr.getMsi() + " en nucleo: " + mejorBfr.getCore() + ", Distancia: " + mejorBfr.getPath().getWeight());
 
-                        EstablisedRoute establisedRoute = new EstablisedRoute(mejorBfr.getPath().getEdgeList(), mejorBfr.getIndexFs(), demand.getDemand().getFs(), demand.getDemand().getSource(), demand.getDemand().getDestination(), mejorBfr.getCore());
+                        EstablisedRoute establisedRoute = new EstablisedRoute(mejorBfr.getPath().getEdgeList(), mejorBfr.getIndexFs(), demand.getFs(), demand.getSource(), demand.getDestination(), mejorBfr.getCore());
 
                         establishedRoutes.add((EstablisedRoute) establisedRoute);
                         Utils.assignFs((EstablisedRoute) establisedRoute);
@@ -188,7 +144,7 @@ public class SimuladorController {
                         System.out.println("Demanda " + demandsQ + " BLOQUEADA ");
                         //response.setSlotBlock(demand.getFs());
                         //blocked = true;
-                        demand.getDemand().setBlocked(true);
+                        demand.setBlocked(true);
                         //slotsBlocked += demand.getFs();
                         blocksQ++;
                         fsMax = previousFSMax; // Restablecer FSMAX al valor anterior

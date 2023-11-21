@@ -3,9 +3,10 @@ package py.una.pol.rest.model;
 public class Demand {
     private int source;
     private int destination;
-    private int fs;
     private int bitRate;
-    private int timeLife;
+    private int distance;
+    private String modulation;
+    private int fs;
     private boolean blocked;
 
     public Demand(int source, int destination, int bitRate) {
@@ -30,14 +31,6 @@ public class Demand {
         this.destination = destination;
     }
 
-    public int getFs() {
-        return fs;
-    }
-
-    public void setFs(int fs) {
-        this.fs = fs;
-    }
-
     public int getBitRate() {
         return bitRate;
     }
@@ -46,16 +39,28 @@ public class Demand {
         this.bitRate = bitRate;
     }
 
-    public int getTimeLife() {
-        return timeLife;
+    public int getDistance() {
+        return distance;
     }
 
-    public void setTimeLife(int timeLife) {
-        this.timeLife = timeLife;
+    public void setDistance(int distance) {
+        this.distance = distance;
     }
 
-    public boolean getBlocked() {
-        return this.blocked;
+    public String getModulation() {
+        return modulation;
+    }
+
+    public void setModulation(String modulation) {
+        this.modulation = modulation;
+    }
+
+    public int getFs() {
+        return fs;
+    }
+
+    public void setFs(int fs) {
+        this.fs = fs;
     }
 
     public boolean isBlocked() {
@@ -65,5 +70,4 @@ public class Demand {
     public void setBlocked(boolean blocked) {
         this.blocked = blocked;
     }
-
 }

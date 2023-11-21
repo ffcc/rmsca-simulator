@@ -35,26 +35,6 @@ public class Utils {
         return demands;
     }
 
-    public static Demand generateSingleDemand(int cantNodos) {
-        int source, destination, randomBitRate;
-        int[] bitRates = {10, 40, 100, 400};
-
-        Random rand = new Random();
-        source = rand.nextInt(cantNodos);
-        destination = rand.nextInt(cantNodos);
-
-        // Ensure source and destination are different
-        while (source == destination) {
-            destination = rand.nextInt(cantNodos);
-        }
-
-        // Generate a random bit rate from the available options
-        randomBitRate = bitRates[rand.nextInt(bitRates.length)];
-
-        return new Demand(source, destination, randomBitRate);
-    }
-
-
     public static int poisson(int lambda) {
         int b, bFact;
         double s, a;

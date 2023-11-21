@@ -4,10 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import py.una.pol.rest.model.BitrateInfoDTO;
-import py.una.pol.rest.model.DemandDistancePair;
-import py.una.pol.rest.model.ModulationInfo;
-import py.una.pol.rest.model.ModulationInfoDTO;
+import py.una.pol.rest.model.*;
 
 import java.io.IOException;
 import java.util.*;
@@ -16,7 +13,7 @@ public class ModulationCalculator {
 
     private List<ModulationInfo> modulationInfoList;
 
-    public String calculateModulation(DemandDistancePair demand) throws IOException {
+    public String calculateModulation(Demand demand) throws IOException {
 
         String surveyFileName = "modulation/survey.json";
         String jsonStr = new String(ModulationCalculator.class.getClassLoader().getResourceAsStream(surveyFileName).readAllBytes());
@@ -45,14 +42,14 @@ public class ModulationCalculator {
         return selectedModulation;
     }
 
-    public boolean calculateFS(DemandDistancePair demand) {
+    public boolean calculateFS(Demand demand) {
         try {
             // Obtener la modulación adecuada para la demanda
             String modulation = calculateModulation(demand);
 
             // Elegir aleatoriamente un bitrate dentro del rango
             Random random = new Random();
-            int selectedBitrate = demand.getDemand().getBitRate();
+            int selectedBitrate = demand.getBitRate();
 
             // Cargar el archivo JSON en un DTO
             String bitrateFileName = "modulation/bitrate.json";
@@ -82,7 +79,7 @@ public class ModulationCalculator {
 
                 // Establecer la modulación y la cantidad de FS en la demanda
                 demand.setModulation(modulation);
-                demand.getDemand().setFs(fs);
+                demand.setFs(fs);
 
                 System.out.println("bitrate: " + selectedBitrate + ", Modulacion: " + modulation + " y FS: " + fs);
 
@@ -98,9 +95,6 @@ public class ModulationCalculator {
             return false;
         }
     }
-
-
-
 
     private List<ModulationInfo> parseJsonToModulationInfoList(String jsonStr) {
         List<ModulationInfo> modulationInfoList = new ArrayList<>();
