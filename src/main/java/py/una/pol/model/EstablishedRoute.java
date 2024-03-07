@@ -1,9 +1,9 @@
-package py.una.pol.rest.model;
+package py.una.pol.model;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class EstablisedRoute {
+public class EstablishedRoute {
     private int fsIndexBegin;
     private int fs;
     private int from;
@@ -12,9 +12,9 @@ public class EstablisedRoute {
     private int core;
     private int fsMax;
 
-    public EstablisedRoute() {
+    public EstablishedRoute() {
     }
-    public EstablisedRoute(List path, int fsIndexBegin, int fs, int from, int to, int core) {
+    public EstablishedRoute(List path, int fsIndexBegin, int fs, int from, int to, int core) {
         this.path = path;
         this.fsIndexBegin = fsIndexBegin;
         this.fs = fs;

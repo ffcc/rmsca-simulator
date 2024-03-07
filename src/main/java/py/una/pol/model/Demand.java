@@ -1,4 +1,4 @@
-package py.una.pol.rest.model;
+package py.una.pol.model;
 
 public class Demand {
     private int source;

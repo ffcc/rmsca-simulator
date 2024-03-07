@@ -1,4 +1,4 @@
-package py.una.pol.rest.model;
+package py.una.pol.model;
 
 public class ModulationInfoDTO {
     private double anchoDeBanda;

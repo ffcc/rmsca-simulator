@@ -1,4 +1,4 @@
-package py.una.pol.rest.model;
+package py.una.pol.model;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;

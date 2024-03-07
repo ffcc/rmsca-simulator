@@ -4,8 +4,8 @@ import org.jgrapht.Graph;
 import org.jgrapht.GraphPath;
 import py.una.pol.algorithms.ModulationCalculator;
 import py.una.pol.algorithms.ShortestPathFinder;
-import py.una.pol.rest.model.Demand;
-import py.una.pol.rest.model.Link;
+import py.una.pol.model.Demand;
+import py.una.pol.model.Link;
 
 import java.util.ArrayList;
 import java.util.List;

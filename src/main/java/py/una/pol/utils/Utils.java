@@ -4,13 +4,10 @@ import org.jgrapht.graph.GraphWalk;
 import org.jgrapht.graph.SimpleWeightedGraph;
 
 import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.*;
 
 import org.jgrapht.Graph;
-import py.una.pol.algorithms.Algorithms;
-import py.una.pol.rest.model.*;
+import py.una.pol.model.*;
 
 public class Utils {
 
@@ -168,7 +165,7 @@ public class Utils {
         for (int i = 0; i < capacity; i++) {
             for (Object path: ksp.getEdgeList()){
                 Link link = (Link) path;
-                FrecuencySlot fs = link.getCores().get(core).getFs().get(i);
+                FrequencySlot fs = link.getCores().get(core).getFs().get(i);
                 if(fs.isFree()){
                     frees++;
                 }
@@ -243,7 +240,7 @@ public class Utils {
             free = true;
             for (Object path: ksp.getEdgeList()){
                 Link link = (Link) path;
-                FrecuencySlot fs = link.getCores().get(core).getFs().get(i);
+                FrequencySlot fs = link.getCores().get(core).getFs().get(i);
                 if(!fs.isFree()){//Se verifica que todo el camino este libre en el slot i
                     free = false;
                     canBeCandidate = true;//Cuando encuentra un slot ocupado entonces el siguiente puede ser candidato
@@ -262,7 +259,7 @@ public class Utils {
         return indexes;
     }
 
-    public static void assignFs(EstablisedRoute establisedRoute){
+    public static void assignFs(EstablishedRoute establisedRoute){
         for (Object link: establisedRoute.getPath()){
             for (int i = establisedRoute.getFsIndexBegin(); i < establisedRoute.getFsIndexBegin() + establisedRoute.getFs(); i++){
                 ((Link) link).getCores().get(establisedRoute.getCore()).getFs().get(i).setFree(false);
@@ -270,7 +267,7 @@ public class Utils {
         }
     }
 
-    public static void deallocateFs(Graph graph, EstablisedRoute establisedRoute){
+    public static void deallocateFs(Graph graph, EstablishedRoute establisedRoute){
         int core = establisedRoute.getCore();
         for (Link link: establisedRoute.getPath()){
             Link linkAux = (Link) graph.getEdge(link.getFrom(),link.getTo());
@@ -291,7 +288,7 @@ public class Utils {
     }
 
     public static double graphEntropyCalculation(Graph graph){
-        List<FrecuencySlot> fs;
+        List<FrequencySlot> fs;
         double uelink=0;
         int ueCount = 0;
         int cores = 0;
@@ -324,10 +321,10 @@ public class Utils {
         for(Link link : links) {
             List<Core> cores = new ArrayList<>();
             for (Core core : link.getCores()) {
-                List<FrecuencySlot> espectro = new ArrayList<>();
+                List<FrequencySlot> espectro = new ArrayList<>();
 
-                for (FrecuencySlot fs : core.getFs()){
-                    FrecuencySlot fsCopy = new FrecuencySlot(core.getBandwidth()/ core.getFs().size());
+                for (FrequencySlot fs : core.getFs()){
+                    FrequencySlot fsCopy = new FrequencySlot(core.getBandwidth()/ core.getFs().size());
                     fsCopy.setFree(fs.isFree());
                     espectro.add(fsCopy);
                 }
@@ -342,7 +339,7 @@ public class Utils {
         return copy;
     }
 
-    public static boolean compareRoutes(EstablisedRoute r1, EstablisedRoute r2){
+    public static boolean compareRoutes(EstablishedRoute r1, EstablishedRoute r2){
         if(r1.getPath().size() != r2.getPath().size())
             return false;
         String rs1, rs2;

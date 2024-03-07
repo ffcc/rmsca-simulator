@@ -1,4 +1,4 @@
-package py.una.pol.rest.model;
+package py.una.pol.model;
 
 import java.util.ArrayList;
 import java.util.Map;

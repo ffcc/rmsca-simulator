@@ -4,7 +4,7 @@ import org.jgrapht.Graph;
 import org.jgrapht.GraphPath;
 import org.jgrapht.alg.shortestpath.DijkstraShortestPath;
 import org.jgrapht.alg.shortestpath.KShortestSimplePaths;
-import py.una.pol.rest.model.Link;
+import py.una.pol.model.Link;
 
 import java.util.ArrayList;
 import java.util.List;

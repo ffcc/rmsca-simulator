@@ -1,4 +1,4 @@
-package py.una.pol.rest.controller;
+package py.una.pol.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -7,9 +7,8 @@ import org.jgrapht.GraphPath;
 import org.jgrapht.graph.SimpleWeightedGraph;
 import org.springframework.web.bind.annotation.*;
 import py.una.pol.algorithms.Algorithms;
-import py.una.pol.algorithms.ModulationCalculator;
 import py.una.pol.algorithms.ShortestPathFinder;
-import py.una.pol.rest.model.*;
+import py.una.pol.model.*;
 import py.una.pol.utils.DemandSorter;
 import py.una.pol.utils.DemandsGenerator;
 import py.una.pol.utils.ResourceReader;
@@ -27,24 +26,22 @@ import java.util.*;
 public class SimuladorController {
 
     @PostMapping(path = "/simular")
-    public List<Response> simular(@RequestBody Options options) throws Exception {
+    public List<Response> simular(@RequestBody Options options) {
+        List<EstablishedRoute> establishedRoutes = new ArrayList<>();
+        List<GraphPath<Integer, Link>> kspaths = new ArrayList<>();
         List<Demand> demands;
-        List<EstablisedRoute> establishedRoutes = new ArrayList<>();
-        //se crea la topoligia con los parámetros seleccionados
-        Graph<Integer, Link> net = createTopology(options.getTopology(), options.getCores(), options.getFsWidth(), options.getCapacity());
-        List<BFR> listaBfr;
         int fsMax = 0;
         int previousFSMax = 0;
         int demandsQ = 0, blocksQ = 0;
-        //colector que va a almacenar los k caminos mas cortos
-        List<GraphPath<Integer, Link>> kspaths = new ArrayList<>();
+
+        //se crea la topologia con los parámetros seleccionados
+        Graph<Integer, Link> net = createTopology(options.getTopology(), options.getCores(), options.getFsWidth(), options.getCapacity());
+
         //buscador de caminos mas cortos DIJKSTRA - KSP
         ShortestPathFinder shortestPathFinder = new ShortestPathFinder(net);
 
-
         //se generan aleatoriamente las demandas, de acuerdo a la cantidad proporcionadas por parámetro
         demands = DemandsGenerator.generateAndValidateDemands(options.getDemandsQuantity(), net, shortestPathFinder);
-
 
         // Ordenar en función del parámetro ascendente, descendente y aleatorio seria como viene
         if (options.getSortingDemands().equalsIgnoreCase("ASC")) {
@@ -88,75 +85,29 @@ public class SimuladorController {
             }
 
             //busqueda de caminos disponibles, para establecer los enlaces
-            try {
-                while (true) {
-                    listaBfr = new ArrayList<>();
-                    //iteramos los mejores caminos de origen a destino
-                    for (GraphPath<Integer, Link> path : kspaths) {
-                        if (fsMax < demand.getFs()) {
-                            fsMax = demand.getFs();
-                        }
+            EstablishedRoute establishedRoute = Algorithms.findBestRoute(demand, net, kspaths, options.getCores(), options.getCapacity(), fsMax);
 
-                        //iteramos los nucleos
-                        for (int i = 0; i < options.getCores(); i++) {
-                            //cumple principios de eon
-                            //calcular bfr
-                            listaBfr.add(Algorithms.customRsa(net, path, demand, fsMax, i, options.getCapacity()));
-                        }
-                    }
+            if (establishedRoute == null) {
+                response.setBlock(true);
+                System.out.println("Demanda " + demandsQ + " BLOQUEADA ");
+                //response.setSlotBlock(demand.getFs());
+                //blocked = true;
+                demand.setBlocked(true);
+                //slotsBlocked += demand.getFs();
+                blocksQ++;
 
-                    // Filtra los valores nulos de la lista de BFR
-                    listaBfr.removeIf(Objects::isNull);
+                break;
 
-                    if (!listaBfr.isEmpty()) {
-                        // Ordena la lista de BFR en orden ascendente
-                        listaBfr.sort(Comparator.comparingDouble(BFR::getMsi));
-
-                        // Ordena la lista de BFR en orden ascendente según el valor de MSI y, en caso de empate, el BFR.
-                        listaBfr.sort(Comparator.comparing(BFR::getMsi).thenComparing(BFR::getValue));
-
-
-                        // Obtén el BFR más pequeño (el primero en la lista)
-                        BFR mejorBfr = listaBfr.get(0);
-
-                        // Agregar aqui si cumple con el umbral de la diafonia
-
-                        System.out.println("Elegimos el BFR: " + mejorBfr.getValue() + ", y el MSI: " + mejorBfr.getMsi() + " en nucleo: " + mejorBfr.getCore() + ", Distancia: " + mejorBfr.getPath().getWeight());
-
-                        EstablisedRoute establisedRoute = new EstablisedRoute(mejorBfr.getPath().getEdgeList(), mejorBfr.getIndexFs(), demand.getFs(), demand.getSource(), demand.getDestination(), mejorBfr.getCore());
-
-                        establishedRoutes.add((EstablisedRoute) establisedRoute);
-                        Utils.assignFs((EstablisedRoute) establisedRoute);
-                        response.setCore(((EstablisedRoute) establisedRoute).getCore());
-                        response.setFsIndexBegin(((EstablisedRoute) establisedRoute).getFsIndexBegin());
-                        response.setFsMax(((EstablisedRoute) establisedRoute).getFsMax());
-                        //imprimimos el path de origen a destino
-                        //((EstablisedRoute) establisedRoute).printDemandNodes();
-                        response.setPath(((EstablisedRoute) establisedRoute).printDemandNodes());
-                        System.out.println("Imprimiendo BFR de la Red: " + Algorithms.BFR(net, options.getCapacity()));
-
-
-                        break;
-                    }
-
-                    if (fsMax >= options.getCapacity() && listaBfr.isEmpty()) {
-                        response.setBlock(true);
-                        System.out.println("Demanda " + demandsQ + " BLOQUEADA ");
-                        //response.setSlotBlock(demand.getFs());
-                        //blocked = true;
-                        demand.setBlocked(true);
-                        //slotsBlocked += demand.getFs();
-                        blocksQ++;
-                        fsMax = previousFSMax; // Restablecer FSMAX al valor anterior
-
-                        break;
-                    }
-
-                    if (listaBfr.isEmpty())
-                        fsMax++;
-                }
-            } catch (java.lang.Exception e) {
-                e.printStackTrace();
+            } else {
+                establishedRoutes.add(establishedRoute);
+                Utils.assignFs(establishedRoute);
+                response.setCore((establishedRoute).getCore());
+                response.setFsIndexBegin((establishedRoute).getFsIndexBegin());
+                response.setFsMax((establishedRoute).getFsMax());
+                //imprimimos el path de origen a destino
+                //((EstablisedRoute) establisedRoute).printDemandNodes();
+                response.setPath((establishedRoute).printDemandNodes());
+                System.out.println("Imprimiendo BFR de la Red: " + Algorithms.BFR(net, options.getCapacity()));
             }
 
             responses.add(response);
@@ -167,7 +118,6 @@ public class SimuladorController {
         System.out.println("Resumen general del simulador");
         System.out.println("Cantidad de demandas: " + demandsQ);
         System.out.println("Cantidad de bloqueos: " + blocksQ);
-        System.out.println("FSMAX: " + fsMax);
         //System.out.println("Cantidad de defragmentaciones: " + defragsQ);
         //System.out.println("Cantidad de desfragmentaciones fallidas: " + defragsF);
         System.out.println("Fin Simulación");
@@ -221,7 +171,7 @@ public class SimuladorController {
                     int distance = node.get("distance").get(i).intValue();
                     List<Core> cores = new ArrayList<>();
 
-                    for (int j = 0; j < numberOfCores; j++) {
+                        for (int j = 0; j < numberOfCores; j++) {
                         Core core = new Core(fsWidh, numberOffs);
                         cores.add(core);
                     }
@@ -260,12 +210,12 @@ public class SimuladorController {
         }
     }
 
-    private void printFSStatus(Options options, List<EstablisedRoute> establishedRoutes) {
+    private void printFSStatus(Options options, List<EstablishedRoute> establishedRoutes) {
         for (int coreIndex = 0; coreIndex < options.getCores(); coreIndex++) {
             boolean[] coreSlots = new boolean[options.getCapacity()];
             Arrays.fill(coreSlots, false);
 
-            for (EstablisedRoute route : establishedRoutes) {
+            for (EstablishedRoute route : establishedRoutes) {
                 if (route.getCore() == coreIndex) {
                     for (int fsIndex = route.getFsIndexBegin(); fsIndex <= route.getFsIndexEnd(); fsIndex++) {
                         coreSlots[fsIndex] = true;
@@ -341,7 +291,7 @@ public class SimuladorController {
         for (Link link : net.edgeSet()) {
             for (int core = 0; core < cores; core++) {
                 int freeFSOnLink = 0;
-                for (FrecuencySlot fs : link.getCores().get(core).getFs()) {
+                for (FrequencySlot fs : link.getCores().get(core).getFs()) {
                     if (fs.isFree()) {
                         freeFSOnLink++;
                     }
@@ -359,7 +309,7 @@ public class SimuladorController {
         for (Link link : net.edgeSet()) {
             System.out.println("Enlace DE: " + link.getFrom() + " A: " + link.getTo());
             for (int coreIndex = 0; coreIndex < cores; coreIndex++) {
-                FrecuencySlot[] coreSlots = link.getCores().get(coreIndex).getFs().toArray(new FrecuencySlot[0]);
+                FrequencySlot[] coreSlots = link.getCores().get(coreIndex).getFs().toArray(new FrequencySlot[0]);
                 System.out.print("Núcleo " + coreIndex + ": ");
                 for (int fsIndex = 0; fsIndex < capacity; fsIndex++) {
                     System.out.print(coreSlots[fsIndex].isFree() ? "░" : "█");

@@ -1,6 +1,6 @@
 package py.una.pol.utils;
 
-import py.una.pol.rest.model.Demand;
+import py.una.pol.model.Demand;
 
 import java.util.Collections;
 import java.util.Comparator;

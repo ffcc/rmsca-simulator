@@ -2,9 +2,11 @@ package py.una.pol.algorithms;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
-import py.una.pol.rest.model.*;
+import py.una.pol.model.BitrateInfoDTO;
+import py.una.pol.model.Demand;
+import py.una.pol.model.ModulationInfo;
+import py.una.pol.model.ModulationInfoDTO;
 
 import java.io.IOException;
 import java.util.*;

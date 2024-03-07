@@ -1,10 +1,10 @@
-package py.una.pol.rest.model;
+package py.una.pol.model;
 
-public class FrecuencySlot {
+public class FrequencySlot {
     private boolean free;
     private double fsWidh;
 
-    public FrecuencySlot(double fsWidh) {
+    public FrequencySlot(double fsWidh) {
         this.fsWidh = fsWidh;
         this.free = true;
     }
