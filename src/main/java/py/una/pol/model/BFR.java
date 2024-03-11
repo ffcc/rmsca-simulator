@@ -7,7 +7,7 @@ public class BFR {
     private Double value;
     private int indexFs;
     private int core;
-
+    private boolean used;
     private int msi;
 
     public BFR() {
