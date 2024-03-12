@@ -107,7 +107,6 @@ public class SimuladorController {
                 //imprimimos el path de origen a destino
                 //((EstablisedRoute) establisedRoute).printDemandNodes();
                 response.setPath((establishedRoute).printDemandNodes());
-                System.out.println("Imprimiendo BFR de la Red: " + Algorithms.BFR(net, options.getCapacity()));
             }
 
             responses.add(response);

@@ -6,6 +6,7 @@ import java.util.List;
 public class Core {
     private double bandwidth;
     private List<FrequencySlot> fs;
+    private double bfr;
 
     public Core(double bandwidth, int fs) {
         this.bandwidth = bandwidth;

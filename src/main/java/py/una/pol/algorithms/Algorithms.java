@@ -33,16 +33,15 @@ public class Algorithms {
                     fsMax = demand.getFs();
                 }
 
-                /* verifica el bfr y si hay empate, aplica el MSI */
-                List<BFR> listaBfr = calculateBfrPaths(ksp.getEdgeList(), cores);
-
-
                 for (int i = 0; i <= fsMax - demand.getFs(); i++) {
                     List<Link> enlacesLibres = new ArrayList<>();
                     List<Integer> kspCores = new ArrayList<>();
-                    List<Integer> listMsi = new ArrayList<>();
+                    BFR bestbfr = null;
+                    double minBfrValue = Double.POSITIVE_INFINITY;
+                    int minMsiIndex = Integer.MAX_VALUE;
 
                     for (Link link : ksp.getEdgeList()) {
+                        List<BFR> listaBfr = new ArrayList<>();
                         for (int core = 0; core < cores; core++) {
                             // Calcular el índice de fin para evitar desbordamientos
                             int endIndex = Math.min(i + demand.getFs(), link.getCores().get(core).getFs().size());
@@ -50,17 +49,31 @@ public class Algorithms {
 
                             //principio de continuidad
                             if (isFSBlockFree(bloqueFS)) {
+                                BFR bfr = calculateBFRForCore(link.getCores().get(core).getFs());
+                                listaBfr.add(bfr);
+
+                                // Actualizar el mejor valor de BFR y MSI
+                                if (bfr.getValue() < minBfrValue || (bfr.getValue() == minBfrValue && bfr.getMsi() < minMsiIndex)) {
+                                    bestbfr = bfr;
+                                    minBfrValue = bfr.getValue();
+                                    minMsiIndex = bfr.getMsi();
+                                } else if (bfr.getValue() == minBfrValue && bfr.getMsi() == minMsiIndex) {
+                                    // Si hay más de un BFR óptimo con el mismo valor y MSI, elegir el que tenga el menor índice MSI
+                                    bestbfr = bfr;
+                                }
+
                                 /* calcular bfr por nucleo */
                                 /* calcular msi por nucleo */
                                 /* calcular el crosstalk */
                                 /* verificar contiguidad */
 
-                                /* insertar si cumple con todas las condiciones */
-                                int j = i + 1;
                             }
                         }
 
+
                     }
+
+                    //isCrosstalkAware();
 
                 }
 
@@ -78,19 +91,6 @@ public class Algorithms {
         }
 
         return establishedRoute;
-    }
-
-    private static List<BFR> calculateBfrPaths(List<Link> edgeList, int cores) {
-        List<BFR> bfrList = new ArrayList<>();
-
-        for (Link link : edgeList) {
-            for (int i = 0; i < cores; i++) {
-                BFR bfr = calculateBFRForCore(link.getCores().get(i).getFs());
-                bfrList.add(bfr);
-            }
-        }
-
-        return bfrList;
     }
 
     private static Boolean isFSBlockFree(List<FrequencySlot> bloqueFS) {
@@ -113,10 +113,12 @@ public class Algorithms {
 
         double maxFreeBlockSize = 0; // Inicialmente no hay bloques libres
         double totalFreeSlots = 0; // Inicialmente no hay ranuras libres
+        int maxOccupiedSlotIndex = -1; // Inicialmente no hay ranuras ocupadas
 
         int currentFreeBlockSize = 0; // Para rastrear el tamaño del bloque libre actual
 
-        for (FrequencySlot fs : frequencySlotList) {
+        for (int i = 0; i < frequencySlotList.size(); i++) {
+            FrequencySlot fs = frequencySlotList.get(i);
             if (fs.isFree()) {
                 // Si la ranura de frecuencia está libre
                 totalFreeSlots++; // Aumentar la cantidad total de ranuras libres
@@ -125,16 +127,21 @@ public class Algorithms {
                 // Actualizar la cantidad máxima de bloques libres si es necesario
                 maxFreeBlockSize = Math.max(maxFreeBlockSize, currentFreeBlockSize);
             } else {
-                // Si la ranura de frecuencia está ocupada, restablecer el tamaño del bloque libre actual
+                // Si la ranura de frecuencia está ocupada
                 currentFreeBlockSize = 0;
+
+                // Actualizar el índice del mayor slot ocupado si es necesario
+                maxOccupiedSlotIndex = Math.max(maxOccupiedSlotIndex, i);
             }
         }
 
         // Asignar los valores calculados al objeto BFR
         bfr.setValue(1 - maxFreeBlockSize / totalFreeSlots);
+        bfr.setMsi(maxOccupiedSlotIndex);
 
         return bfr;
     }
+
 
 
     public static boolean isCrosstalkAware(BFR bfr, Graph<Integer, Link> graph, Demand demand, int capacity) {

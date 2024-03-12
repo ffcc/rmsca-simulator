@@ -7,6 +7,7 @@ public class Link {
     private List<Core> cores;
     private int from;
     private int to;
+    private double bestBfr;
 
     public Link(int distance, List<Core> cores, int from, int to) {
         this.distance = distance;
