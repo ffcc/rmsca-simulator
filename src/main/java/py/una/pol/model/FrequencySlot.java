@@ -3,6 +3,8 @@ package py.una.pol.model;
 public class FrequencySlot {
     private boolean free;
     private double fsWidh;
+    private double crosstalk;
+    private double bfr;
 
     public FrequencySlot(double fsWidh) {
         this.fsWidh = fsWidh;

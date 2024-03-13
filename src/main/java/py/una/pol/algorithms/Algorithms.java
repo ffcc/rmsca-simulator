@@ -10,7 +10,7 @@ import java.util.*;
 public class Algorithms {
 
     /*
-     * Algoritmo para establecer rutas utilizando RSA (Routing and Spectrum Assignment).
+     * Algoritmo para establecer rutas utilizando RSA (Routing and Spectrum Assignment) personzalizado.
      *
      * @param demand: Objeto que representa la demanda de la red.
      * @param net: Grafo de la topología de la red.
@@ -52,15 +52,6 @@ public class Algorithms {
                                 BFR bfr = calculateBFRForCore(link.getCores().get(core).getFs());
                                 listaBfr.add(bfr);
 
-                                // Actualizar el mejor valor de BFR y MSI
-                                if (bfr.getValue() < minBfrValue || (bfr.getValue() == minBfrValue && bfr.getMsi() < minMsiIndex)) {
-                                    bestbfr = bfr;
-                                    minBfrValue = bfr.getValue();
-                                    minMsiIndex = bfr.getMsi();
-                                } else if (bfr.getValue() == minBfrValue && bfr.getMsi() == minMsiIndex) {
-                                    // Si hay más de un BFR óptimo con el mismo valor y MSI, elegir el que tenga el menor índice MSI
-                                    bestbfr = bfr;
-                                }
 
                                 /* calcular bfr por nucleo */
                                 /* calcular msi por nucleo */
@@ -71,7 +62,10 @@ public class Algorithms {
                         }
 
 
+
                     }
+
+
 
                     //isCrosstalkAware();
 
