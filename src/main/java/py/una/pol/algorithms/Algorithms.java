@@ -36,12 +36,12 @@ public class Algorithms {
                 for (int i = 0; i <= fsMax - demand.getFs(); i++) {
                     List<Link> enlacesLibres = new ArrayList<>();
                     List<Integer> kspCores = new ArrayList<>();
-                    BFR bestbfr = null;
-                    double minBfrValue = Double.POSITIVE_INFINITY;
-                    int minMsiIndex = Integer.MAX_VALUE;
+                    Metrics bestMetrics = null;
+
 
                     for (Link link : ksp.getEdgeList()) {
-                        List<BFR> listaBfr = new ArrayList<>();
+
+                        List<Metrics> metrics = new ArrayList<>();
                         for (int core = 0; core < cores; core++) {
                             // Calcular el índice de fin para evitar desbordamientos
                             int endIndex = Math.min(i + demand.getFs(), link.getCores().get(core).getFs().size());
@@ -49,8 +49,11 @@ public class Algorithms {
 
                             //principio de continuidad
                             if (isFSBlockFree(bloqueFS)) {
-                                BFR bfr = calculateBFRForCore(link.getCores().get(core).getFs());
-                                listaBfr.add(bfr);
+                                //calculamos el BFR para el nucleo actual
+                                Metrics m = calculateBFRForCore(link.getCores().get(core).getFs());
+                                //calculamos el crosstalk para el nucleo actual
+                                m.setCrosstalk(calculateCrosstalk());
+                                metrics.add(m);
 
 
                                 /* calcular bfr por nucleo */
@@ -102,8 +105,8 @@ public class Algorithms {
         return true;
     }
 
-    public static BFR calculateBFRForCore(List<FrequencySlot> frequencySlotList) {
-        BFR bfr = new BFR();
+    public static Metrics calculateBFRForCore(List<FrequencySlot> frequencySlotList) {
+        Metrics metrics = new Metrics();
 
         double maxFreeBlockSize = 0; // Inicialmente no hay bloques libres
         double totalFreeSlots = 0; // Inicialmente no hay ranuras libres
@@ -130,19 +133,18 @@ public class Algorithms {
         }
 
         // Asignar los valores calculados al objeto BFR
-        bfr.setValue(1 - maxFreeBlockSize / totalFreeSlots);
-        bfr.setMsi(maxOccupiedSlotIndex);
+        metrics.setBfr(1 - maxFreeBlockSize / totalFreeSlots);
+        metrics.setMsi(maxOccupiedSlotIndex);
 
-        return bfr;
+        return metrics;
     }
 
 
 
-    public static boolean isCrosstalkAware(BFR bfr, Graph<Integer, Link> graph, Demand demand, int capacity) {
-        // Implementa la lógica para verificar si el BFR cumple con la restricción de crosstalk aware
-        // Puedes utilizar el BFR, el grafo, la demanda y la capacidad para realizar los cálculos necesarios.
-        // Retorna true si el BFR cumple con la restricción, false en caso contrario.
-        return true;
+    public static double calculateCrosstalk() {
+
+        /*metodo para implementacion del crosstalk*/
+        return 0;
     }
 
     // Método para imprimir los caminos en kspPlaced

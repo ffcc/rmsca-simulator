@@ -2,23 +2,24 @@ package py.una.pol.model;
 
 import org.jgrapht.GraphPath;
 
-public class BFR {
+public class Metrics {
     private GraphPath path;
-    private Double value;
     private int indexFs;
     private int core;
-    private boolean used;
+    private double bfr;
     private int msi;
+    private double crosstalk;
 
-    public BFR() {
+    public Metrics() {
     }
 
-    public BFR(GraphPath path, Double value, int indexFs, int core, int msi) {
+    public Metrics(GraphPath path, int indexFs, int core, double bfr, int msi, double crosstalk) {
         this.path = path;
-        this.value = value;
         this.indexFs = indexFs;
         this.core = core;
+        this.bfr = bfr;
         this.msi = msi;
+        this.crosstalk = crosstalk;
     }
 
     public GraphPath getPath() {
@@ -27,14 +28,6 @@ public class BFR {
 
     public void setPath(GraphPath path) {
         this.path = path;
-    }
-
-    public Double getValue() {
-        return value;
-    }
-
-    public void setValue(Double value) {
-        this.value = value;
     }
 
     public int getIndexFs() {
@@ -53,12 +46,28 @@ public class BFR {
         this.core = core;
     }
 
+    public double getBfr() {
+        return bfr;
+    }
+
+    public void setBfr(double bfr) {
+        this.bfr = bfr;
+    }
+
     public int getMsi() {
         return msi;
     }
 
     public void setMsi(int msi) {
         this.msi = msi;
+    }
+
+    public double getCrosstalk() {
+        return crosstalk;
+    }
+
+    public void setCrosstalk(double crosstalk) {
+        this.crosstalk = crosstalk;
     }
 }
 
