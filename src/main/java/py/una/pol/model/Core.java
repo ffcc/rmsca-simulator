@@ -37,4 +37,11 @@ public class Core {
         this.fs = fs;
     }
 
+    public double getBfr() {
+        return bfr;
+    }
+
+    public void setBfr(double bfr) {
+        this.bfr = bfr;
+    }
 }

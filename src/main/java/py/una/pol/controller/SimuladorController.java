@@ -2,6 +2,9 @@ package py.una.pol.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import org.jgrapht.Graph;
 import org.jgrapht.GraphPath;
 import org.jgrapht.graph.SimpleWeightedGraph;
@@ -23,10 +26,12 @@ import java.util.*;
 @RestController
 @CrossOrigin(origins = "http://localhost:4200")
 @RequestMapping("/api/v1")
+@Api(value = "SimuladorController", description = "Operaciones relacionadas con la simulación de demandas")
 public class SimuladorController {
 
     @PostMapping(path = "/simular")
-    public List<Response> simular(@RequestBody Options options) {
+    @ApiOperation(value = "Simula las demandas con las opciones proporcionadas")
+    public List<Response> simular(@ApiParam(value = "Opciones para la simulación de demandas", required = true) @RequestBody Options options) {
         List<EstablishedRoute> establishedRoutes = new ArrayList<>();
         List<GraphPath<Integer, Link>> kspaths = new ArrayList<>();
         List<Demand> demands;
@@ -85,7 +90,7 @@ public class SimuladorController {
             }
 
             //busqueda de caminos disponibles, para establecer los enlaces
-            EstablishedRoute establishedRoute = Algorithms.findBestRoute(demand, net, kspaths, options.getCores(), options.getCapacity(), fsMax);
+            EstablishedRoute establishedRoute = Algorithms.findBestRoute(demand, net, kspaths, options.getCores(), options.getCapacity(), fsMax, options.getMaxCrosstalk(), options.getCrosstalkPerUnitLenght());
 
             if (establishedRoute == null) {
                 response.setBlock(true);
@@ -170,7 +175,7 @@ public class SimuladorController {
                     int distance = node.get("distance").get(i).intValue();
                     List<Core> cores = new ArrayList<>();
 
-                        for (int j = 0; j < numberOfCores; j++) {
+                    for (int j = 0; j < numberOfCores; j++) {
                         Core core = new Core(fsWidh, numberOffs);
                         cores.add(core);
                     }
@@ -317,7 +322,6 @@ public class SimuladorController {
             }
         }
     }
-
 
 
 }

@@ -2,7 +2,7 @@ package py.una.pol.model;
 
 import org.jgrapht.GraphPath;
 
-public class Metrics {
+public class Candidates {
     private GraphPath path;
     private int indexFs;
     private int core;
@@ -10,10 +10,10 @@ public class Metrics {
     private int msi;
     private double crosstalk;
 
-    public Metrics() {
+    public Candidates() {
     }
 
-    public Metrics(GraphPath path, int indexFs, int core, double bfr, int msi, double crosstalk) {
+    public Candidates(GraphPath path, int indexFs, int core, double bfr, int msi, double crosstalk) {
         this.path = path;
         this.indexFs = indexFs;
         this.core = core;

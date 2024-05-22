@@ -1,10 +1,11 @@
 package py.una.pol.model;
 
+import java.math.BigDecimal;
+
 public class FrequencySlot {
     private boolean free;
     private double fsWidh;
-    private double crosstalk;
-    private double bfr;
+    private BigDecimal crosstalk;
 
     public FrequencySlot(double fsWidh) {
         this.fsWidh = fsWidh;
@@ -27,4 +28,11 @@ public class FrequencySlot {
         this.fsWidh = fsWidh;
     }
 
+    public BigDecimal getCrosstalk() {
+        return crosstalk;
+    }
+
+    public void setCrosstalk(BigDecimal crosstalk) {
+        this.crosstalk = crosstalk;
+    }
 }

@@ -1,5 +1,7 @@
 package py.una.pol.model;
 
+import java.math.BigDecimal;
+
 public class Options {
     private String topology;
     private float fsWidth;
@@ -7,11 +9,27 @@ public class Options {
     private int fsRangeMin;
     private int fsRangeMax;
     private int cores;
-    private String metricaDesfrag;
     private String sortestAlg;
     private String routingAlg;
     private int demandsQuantity;
     private String sortingDemands;
+    private BigDecimal maxCrosstalk;
+    private Double crosstalkPerUnitLenght;
+
+    public Options(String topology, float fsWidth, int capacity, int fsRangeMin, int fsRangeMax, int cores, String sortestAlg, String routingAlg, int demandsQuantity, String sortingDemands, BigDecimal maxCrosstalk, Double crosstalkPerUnitLenght) {
+        this.topology = topology;
+        this.fsWidth = fsWidth;
+        this.capacity = capacity;
+        this.fsRangeMin = fsRangeMin;
+        this.fsRangeMax = fsRangeMax;
+        this.cores = cores;
+        this.sortestAlg = sortestAlg;
+        this.routingAlg = routingAlg;
+        this.demandsQuantity = demandsQuantity;
+        this.sortingDemands = sortingDemands;
+        this.maxCrosstalk = maxCrosstalk;
+        this.crosstalkPerUnitLenght = crosstalkPerUnitLenght;
+    }
 
     public String getTopology() {
         return topology;
@@ -61,12 +79,12 @@ public class Options {
         this.cores = cores;
     }
 
-    public String getMetricaDesfrag() {
-        return metricaDesfrag;
+    public String getSortestAlg() {
+        return sortestAlg;
     }
 
-    public void setMetricaDesfrag(String metricaDesfrag) {
-        this.metricaDesfrag = metricaDesfrag;
+    public void setSortestAlg(String sortestAlg) {
+        this.sortestAlg = sortestAlg;
     }
 
     public String getRoutingAlg() {
@@ -85,19 +103,27 @@ public class Options {
         this.demandsQuantity = demandsQuantity;
     }
 
-    public String getSortestAlg() {
-        return sortestAlg;
-    }
-
-    public void setSortestAlg(String sortestAlg) {
-        this.sortestAlg = sortestAlg;
-    }
-
     public String getSortingDemands() {
         return sortingDemands;
     }
 
     public void setSortingDemands(String sortingDemands) {
         this.sortingDemands = sortingDemands;
+    }
+
+    public BigDecimal getMaxCrosstalk() {
+        return maxCrosstalk;
+    }
+
+    public void setMaxCrosstalk(BigDecimal maxCrosstalk) {
+        this.maxCrosstalk = maxCrosstalk;
+    }
+
+    public Double getCrosstalkPerUnitLenght() {
+        return crosstalkPerUnitLenght;
+    }
+
+    public void setCrosstalkPerUnitLenght(Double crosstalkPerUnitLenght) {
+        this.crosstalkPerUnitLenght = crosstalkPerUnitLenght;
     }
 }
