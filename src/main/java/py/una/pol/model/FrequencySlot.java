@@ -10,6 +10,7 @@ public class FrequencySlot {
     public FrequencySlot(double fsWidh) {
         this.fsWidh = fsWidh;
         this.free = true;
+        this.crosstalk = BigDecimal.ZERO;
     }
 
     public boolean isFree() {

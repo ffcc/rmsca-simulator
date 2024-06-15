@@ -4,6 +4,7 @@ import org.jgrapht.Graph;
 import org.jgrapht.GraphPath;
 import org.jgrapht.graph.DefaultWeightedEdge;
 import py.una.pol.model.*;
+import py.una.pol.utils.Utils;
 
 import java.math.BigDecimal;
 import java.util.*;
@@ -22,10 +23,12 @@ public class Algorithms {
      *
      * @return EstablisedRoute: Objeto que representa la ruta establecida con asignación de espectro.
      */
-    public static EstablishedRoute findBestRoute(Demand demand, Graph<Integer, Link> network, List<GraphPath<Integer, Link>> shortestPaths, int cores, int capacity, int fsMax, BigDecimal maxCrosstalk, Double crosstalkPerUnitLenght) {
+    public static EstablishedRoute findBestRoute(Demand demand, Graph<Integer, Link> network, List<GraphPath<Integer, Link>> shortestPaths, int cores, int capacity, int fsMax, BigDecimal maxCrosstalk, Double crosstalkPerUnitLength) {
         EstablishedRoute establishedRoute = null;
         List<GraphPath<Integer, Link>> kspPlaced = new ArrayList<>();
         List<List<Integer>> kspPlacedCores = new ArrayList<>();
+        Integer fsIndexBegin = null;
+        Integer selectedIndex = null;
         int k = 0;
 
         try {
@@ -55,16 +58,39 @@ public class Algorithms {
                             int endIndex = Math.min(i + demand.getFs(), link.getCores().get(core).getFs().size());
                             List<FrequencySlot> fsBlock = link.getCores().get(core).getFs().subList(i, i + endIndex);
 
-                            //principio de continuidad
+                            //principio de continuidad, verifica si el bloque tiene todos los FS libres
                             if (isFSBlockFree(fsBlock)) {
-                                if (isCrosstalkFree(fsBlock, maxCrosstalk, crosstalkBlockList))
+                                //verifica el crosstalk en el bloque actual
+                                if (isFsBlockCrosstalkFree(fsBlock, maxCrosstalk, crosstalkBlockList))
+                                    //verifica el crosstalk en los vecinos
+                                    if (isNextToCrosstalkFreeCores(link, maxCrosstalk, core, i, demand.getFs(), crosstalkPerUnitLength)) {
+                                        freeLinks.add(link);
+                                        kspCores.add(core);
+                                        fsIndexBegin = i;
+                                        selectedIndex = k;
+
+                                        for (int crosstalkFsListIndex = 0; crosstalkFsListIndex < crosstalkBlockList.size(); crosstalkFsListIndex++) {
+                                            BigDecimal crosstalkRuta = crosstalkBlockList.get(crosstalkFsListIndex);
+                                            crosstalkRuta = crosstalkRuta.add(Utils.toDB(Utils.XT(Utils.getCantidadVecinos(core), crosstalkPerUnitLength, link.getDistance())));
+                                            crosstalkBlockList.set(crosstalkFsListIndex, crosstalkRuta);
+                                        }
+                                        core = cores;
+
+                                        if (freeLinks.size() == ksp.getEdgeList().size()) {
+                                            kspPlaced.add(shortestPaths.get(selectedIndex));
+                                            kspPlacedCores.add(kspCores);
+                                            k = shortestPaths.size();
+                                            i = capacity;
+                                        }
+                                    }
+
                                 //calculamos el BFR para el nucleo actual
-                                Candidates candidate = calculateBFRForCore(link.getCores().get(core).getFs());
+                                //Candidates candidate = calculateBFRForCore(link.getCores().get(core).getFs());
                                 //calculamos el crosstalk para el nucleo actual
-                                candidate.setCrosstalk(calculateCrosstalk());
+                                // candidate.setCrosstalk(calculateCrosstalk());
 
 
-                                candidates.add(candidate);
+                                //candidates.add(candidate);
 
 
                                 if (freeLinks.size() == ksp.getEdgeList().size()) {
@@ -77,29 +103,24 @@ public class Algorithms {
                             }
                         }
 
-                        establishedRoute = selectBestRoute(candidates, umbralCrosstalk);
-
-
-
-
-
-
 
                     }
-
-
-
-
-
-                    //isCrosstalkAware();
-
                 }
-
 
                 fsMax++;
                 k++;
 
             }
+
+            EstablishedRoute establisedRoute;
+            if (fsIndexBegin != null && !kspPlaced.isEmpty()) {
+                establisedRoute = new EstablishedRoute(kspPlaced.get(0).getEdgeList(),
+                        fsIndexBegin, demand.getFs(), demand.getSource(), demand.getDestination(), kspPlacedCores.get(0));
+            } else {
+                //System.out.println("Bloqueo");
+                establisedRoute = null;
+            }
+            return establisedRoute;
 
             /* establecer ruta o retornar null */
 
@@ -115,6 +136,37 @@ public class Algorithms {
         for (FrequencySlot fs : bloqueFS) {
             if (!fs.isFree()) {
                 return false;
+            }
+        }
+        return true;
+    }
+
+    private static Boolean isFsBlockCrosstalkFree(List<FrequencySlot> fss, BigDecimal maxCrosstalk, List<BigDecimal> crosstalkRuta) {
+        for (int i = 0; i < fss.size(); i++) {
+            BigDecimal fsCrosstalk = fss.get(i).getCrosstalk();
+            BigDecimal crosstalkActual = crosstalkRuta.get(i).add(fsCrosstalk);
+
+            if (crosstalkActual.compareTo(maxCrosstalk) > 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+
+    private static Boolean isNextToCrosstalkFreeCores(Link link, BigDecimal maxCrosstalk, Integer core, int fsIndexBegin, int fsWidth, Double crosstalkPerUnitLength) {
+        List<Integer> vecinos = Utils.getCoreVecinos(core);
+        for (Integer coreVecino : vecinos) {
+            for (Integer i = fsIndexBegin; i < fsIndexBegin + fsWidth; i++) {
+                FrequencySlot fsVecino = link.getCores().get(coreVecino).getFs().get(i);
+                if (!fsVecino.isFree()) {
+                    BigDecimal crosstalkASumar = Utils.toDB(Utils.XT(Utils.getCantidadVecinos(core), crosstalkPerUnitLength, link.getDistance()));
+                    BigDecimal crosstalk = fsVecino.getCrosstalk().add(crosstalkASumar);
+                    //BigDecimal crosstalkDB = Utils.toDB(crosstalk.doubleValue());
+                    if (crosstalk.compareTo(maxCrosstalk) >= 0) {
+                        return false;
+                    }
+                }
             }
         }
         return true;
@@ -141,11 +193,10 @@ public class Algorithms {
             } else {
                 // Si la ranura de frecuencia está ocupada
                 currentFreeBlockSize = 0;
-+
 
                 // Actualizar el índice del mayor slot ocupado si es necesario
                 maxOccupiedSlotIndex = Math.max(maxOccupiedSlotIndex, i);
-?><             }
+            }
         }
 
         // Asignar los valores calculados al objeto BFR
@@ -154,75 +205,6 @@ public class Algorithms {
 
         return metrics;
     }
-
-    private static boolean isCrosstalkFreeForCurrentBlock(List<FrequencySlot> fsBlock ) {
-
-        return true;
-    }
-
-    private static Boolean calculateCrosstalk(List<FrequencySlot> bloqueFS, BigDecimal maxCrosstalk, List<BigDecimal> crosstalkPath) {
-
-        double crosstalk = Double.MAX_VALUE;
-
-        return true;
-    }
-
-    private static Boolean isCrosstalkFree(List<FrequencySlot> bloqueFS, BigDecimal maxCrosstalk, List<BigDecimal> crosstalkPath) {
-        for (int i = 0; i < bloqueFS.size(); i++) {
-            BigDecimal crosstalkActual = crosstalkPath.get(i).add(bloqueFS.get(i).getCrosstalk());
-            if (crosstalkActual.compareTo(maxCrosstalk) > 0) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private static Boolean isNextToCrosstalkFreeCores(Link link, BigDecimal maxCrosstalk, Integer core, Integer fsIndexBegin, Integer fsWidth, Double crosstalkPerUnitLength) {
-//m,.        List<Integer> vecinos = Utils.getCoreVecinos(core);
-        for (Integer coreVecino : vecinos) {
-
-            iop
-            for (Integer i = fsIndexBegin; i < fsIndexBegin + fsWidth; i++) {
-                FrequencySlot fsVecino = link.getCores().get(coreVecino).getFrequencySlots().get(i);
-                if (!fsVecino.isFree()) {
-                    BigDecimal crosstalkASumar = Utils.toDB(Utils.XT(Utils.getCantidadVecinos(core), crosstalkPerUnitLength, link.getDistance()));
-                    BigDecimal crosstalk = fsVecino.getCrosstalk().add(crosstalkASumar);
-                    //BigDecimal crosstalkDB = Utils.toDB(crosstalk.doubleValue());
-                    if (crosstalk.compareTo(maxCrosstalk) >= 0) {
-                        return false;
-                    }
-                }
-            }
-        }
-        return true;
-    }
-
-    private EstablishedRoute selectBestRoute(List<Candidates> candidates, double umbralCrosstalk) {
-        EstablishedRoute bestRoute = null;
-        double bestBFR = Double.MAX_VALUE;
-        double bestMSI = Double.MAX_VALUE;
-
-        for (Candidates candidate : candidates) {
-            if (candidate.getBfr() < bestBFR) {
-                bestRoute = candidate.getRoute();
-                bestBFR = candidate.getBfr();
-                bestMSI = candidate.getMsi();
-            } else if (candidate.getBfr() == bestBFR && candidate.getMsi() < bestMSI) {
-                bestRoute = candidate.getRoute();
-                bestMSI = candidate.getMsi();
-            }
-
-            // Verificar si el crosstalk está dentro del umbral
-            if (candidate.getCrosstalk() <= umbralCrosstalk) {
-                // Actualizar la mejor ruta encontrada si cumple con todos los criterios
-                return candidate.getRoute(); // Retorna la ruta encontrada
-            }
-        }
-
-        // Si no se encontró ninguna ruta válida, retorna null
-        return null;
-    }
-
 
     // Método para imprimir los caminos en kspPlaced
     private static void imprimirCaminos(List<GraphPath> kspPlaced) {

@@ -105,8 +105,8 @@ public class SimuladorController {
 
             } else {
                 establishedRoutes.add(establishedRoute);
-                Utils.assignFs(establishedRoute);
-                response.setCore((establishedRoute).getCore());
+                //Utils.assignFs(establishedRoute);
+                //response.setCore((establishedRoute).getCore());
                 response.setFsIndexBegin((establishedRoute).getFsIndexBegin());
                 response.setFsMax((establishedRoute).getFsMax());
                 //imprimimos el path de origen a destino
@@ -213,28 +213,6 @@ public class SimuladorController {
             e.printStackTrace();
         }
     }
-
-    private void printFSStatus(Options options, List<EstablishedRoute> establishedRoutes) {
-        for (int coreIndex = 0; coreIndex < options.getCores(); coreIndex++) {
-            boolean[] coreSlots = new boolean[options.getCapacity()];
-            Arrays.fill(coreSlots, false);
-
-            for (EstablishedRoute route : establishedRoutes) {
-                if (route.getCore() == coreIndex) {
-                    for (int fsIndex = route.getFsIndexBegin(); fsIndex <= route.getFsIndexEnd(); fsIndex++) {
-                        coreSlots[fsIndex] = true;
-                    }
-                }
-            }
-
-            System.out.print("Núcleo " + coreIndex + ": ");
-            for (int fsIndex = 0; fsIndex < options.getCapacity(); fsIndex++) {
-                System.out.print(coreSlots[fsIndex] ? "█" : "░");
-            }
-            System.out.println();
-        }
-    }
-
 
     private String obtenerDatosParaNucleo(List<Response> responses, int capacity) {
         StringBuilder datos = new StringBuilder();

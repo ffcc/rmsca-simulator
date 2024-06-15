@@ -9,18 +9,18 @@ public class EstablishedRoute {
     private int from;
     private int to;
     private List<Link> path;
-    private int core;
+    private List<Integer> pathCores;
     private int fsMax;
 
     public EstablishedRoute() {
     }
-    public EstablishedRoute(List path, int fsIndexBegin, int fs, int from, int to, int core) {
+    public EstablishedRoute(List path, int fsIndexBegin, int fs, int from, int to, List<Integer> pathCores) {
         this.path = path;
         this.fsIndexBegin = fsIndexBegin;
         this.fs = fs;
         this.from = from;
         this.to = to;
-        this.core = core;
+        this.pathCores = pathCores;
     }
 
     public int getFsIndexBegin() {
@@ -63,12 +63,16 @@ public class EstablishedRoute {
         this.path = path;
     }
 
-    public int getCore() {
-        return core;
+    public List<Integer> getPathCores() {
+        return pathCores;
     }
 
-    public void setCore(int core) {
-        this.core = core;
+    public void setPathCores(List<Integer> pathCores) {
+        this.pathCores = pathCores;
+    }
+
+    public void setFsMax(int fsMax) {
+        this.fsMax = fsMax;
     }
 
     public int getFsMax() {
