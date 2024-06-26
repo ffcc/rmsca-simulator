@@ -105,7 +105,7 @@ public class SimuladorController {
 
             } else {
                 establishedRoutes.add(establishedRoute);
-                //Utils.assignFs(establishedRoute);
+                Utils.assignFs(net, establishedRoute, options.getCrosstalkPerUnitLenght());
                 //response.setCore((establishedRoute).getCore());
                 response.setFsIndexBegin((establishedRoute).getFsIndexBegin());
                 response.setFsMax((establishedRoute).getFsMax());

@@ -1,4 +1,10 @@
 nroDemanda,cantRutasActivas,origen,destino,core,fsIndexBegin,fs,path,bitrate,modulation,block,slotBlock,MSI
-0,0,6,1,0,0,1,PATH: 6 --> 1,40,64-QAM,false,0,0
-1,1,0,3,0,0,1,PATH: 0 --> 3,40,64-QAM,false,0,0
-2,2,6,9,0,0,1,PATH: 6 --> 9,40,64-QAM,false,0,0
+0,0,7,3,0,0,1,PATH: 7 --> 5 --> 3,40,64-QAM,false,0,0
+1,1,6,4,0,0,1,PATH: 6 --> 4,40,64-QAM,false,0,0
+2,2,8,6,0,0,1,PATH: 8 --> 9 --> 6,40,64-QAM,false,0,0
+3,3,6,0,0,0,1,PATH: 6 --> 1 --> 0,40,64-QAM,false,0,0
+4,4,4,6,0,0,1,PATH: 4 --> 6,40,64-QAM,false,0,0
+5,5,7,8,0,0,1,PATH: 7 --> 5 --> 8,40,64-QAM,false,0,0
+6,6,2,3,0,0,1,PATH: 2 --> 5 --> 3,40,64-QAM,false,0,0
+7,7,7,3,0,0,1,PATH: 7 --> 5 --> 3,40,64-QAM,false,0,0
+8,8,4,1,0,0,1,PATH: 4 --> 6 --> 1,40,64-QAM,false,0,0

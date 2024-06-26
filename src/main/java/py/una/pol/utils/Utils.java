@@ -62,10 +62,10 @@ public class Utils {
      * fibra
      * @return Respuesta de la operación
      */
-    /*public static AssignFsResponse assignFs(Graph<Integer, Link> graph, EstablishedRoute establishedRoute, Double crosstalkPerUnitLength) {
+    public static AssignFsResponse assignFs(Graph<Integer, Link> graph, EstablishedRoute establishedRoute, Double crosstalkPerUnitLength) {
         for (int j = 0; j < establishedRoute.getPath().size(); j++) {
-            for (int i = establishedRoute.getFsIndexBegin(); i < establishedRoute.getFsIndexBegin() + establishedRoute.getFsWidth(); i++) {
-                establishedRoute.getPath().get(j).getCores().get(establishedRoute.getPathCores().get(j)).getFrequencySlots().get(i).setFree(false);
+            for (int i = establishedRoute.getFsIndexBegin(); i < establishedRoute.getFsIndexBegin() + establishedRoute.getFs(); i++) {
+                establishedRoute.getPath().get(j).getCores().get(establishedRoute.getPathCores().get(j)).getFs().get(i).setFree(false); //marca como ocupados los FS del path
                 Integer core = establishedRoute.getPathCores().get(j);
                 List<Integer> coreVecinos = getCoreVecinos(core);
                 // TODO: Asignar crosstalk
@@ -84,7 +84,7 @@ public class Utils {
         }
         AssignFsResponse response = new AssignFsResponse(graph, establishedRoute);
         return response;
-    }*/
+    }
 
 
 

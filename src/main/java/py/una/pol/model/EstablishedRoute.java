@@ -5,7 +5,7 @@ import java.util.List;
 
 public class EstablishedRoute {
     private int fsIndexBegin;
-    private int fs;
+        private int fs;
     private int from;
     private int to;
     private List<Link> path;

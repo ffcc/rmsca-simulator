@@ -75,7 +75,7 @@ public class Algorithms {
                                             crosstalkBlockList.set(crosstalkFsListIndex, crosstalkRuta);
                                         }
                                         core = cores;
-
+                                        // Si todos los enlaces tienen el mismo bloque de FS libre, se agrega la ruta a la lista de rutas establecidas.
                                         if (freeLinks.size() == ksp.getEdgeList().size()) {
                                             kspPlaced.add(shortestPaths.get(selectedIndex));
                                             kspPlacedCores.add(kspCores);
