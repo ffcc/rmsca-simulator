@@ -45,10 +45,6 @@ public class Algorithms {
                     Candidates bestCandidate = null;
                     List<BigDecimal> crosstalkBlockList = new ArrayList<>();
 
-                    // Se inicializa la lista de valores de crosstalk para cada slot de frecuencia del bloque
-                    for (int fsCrosstalkIndex = 0; fsCrosstalkIndex < demand.getFs(); fsCrosstalkIndex++) {
-                        crosstalkBlockList.add(BigDecimal.ZERO);
-                    }
 
                     for (Link link : ksp.getEdgeList()) {
 
@@ -57,6 +53,12 @@ public class Algorithms {
                             // Calcular el índice de fin para evitar desbordamientos
                             int endIndex = Math.min(i + demand.getFs(), link.getCores().get(core).getFs().size());
                             List<FrequencySlot> fsBlock = link.getCores().get(core).getFs().subList(i, i + endIndex);
+
+                            // Se inicializa la lista de valores de crosstalk para cada slot de frecuencia del bloque
+                            crosstalkBlockList.clear();
+                            for (int fsCrosstalkIndex = 0; fsCrosstalkIndex < fsBlock.size(); fsCrosstalkIndex++) {
+                                crosstalkBlockList.add(BigDecimal.ZERO);
+                            }
 
                             //principio de continuidad, verifica si el bloque tiene todos los FS libres
                             if (isFSBlockFree(fsBlock)) {
@@ -143,6 +145,11 @@ public class Algorithms {
 
     private static Boolean isFsBlockCrosstalkFree(List<FrequencySlot> fss, BigDecimal maxCrosstalk, List<BigDecimal> crosstalkRuta) {
         for (int i = 0; i < fss.size(); i++) {
+            if (i >= crosstalkRuta.size()) {  // Comprobación de desbordamiento
+                System.out.println("Desbordamiento del índice: i = " + i + ", crosstalkRuta.size() = " + crosstalkRuta.size());
+                continue;  // Saltar a la siguiente iteración
+            }
+
             BigDecimal fsCrosstalk = fss.get(i).getCrosstalk();
             BigDecimal crosstalkActual = crosstalkRuta.get(i).add(fsCrosstalk);
 
@@ -154,11 +161,17 @@ public class Algorithms {
     }
 
 
+
     private static Boolean isNextToCrosstalkFreeCores(Link link, BigDecimal maxCrosstalk, Integer core, int fsIndexBegin, int fsWidth, Double crosstalkPerUnitLength) {
         List<Integer> vecinos = Utils.getCoreVecinos(core);
         for (Integer coreVecino : vecinos) {
+            List<FrequencySlot> fsVecinoList = link.getCores().get(coreVecino).getFs();
             for (Integer i = fsIndexBegin; i < fsIndexBegin + fsWidth; i++) {
-                FrequencySlot fsVecino = link.getCores().get(coreVecino).getFs().get(i);
+                if (i < 0 || i >= fsVecinoList.size()) {  // Comprobación de desbordamiento
+                    System.out.println("Desbordamiento del índice: coreVecino = " + coreVecino + ", i = " + i + ", fsVecinoList.size() = " + fsVecinoList.size());
+                    continue;  // Saltar a la siguiente iteración
+                }
+                FrequencySlot fsVecino = fsVecinoList.get(i);
                 if (!fsVecino.isFree()) {
                     BigDecimal crosstalkASumar = Utils.toDB(Utils.XT(Utils.getCantidadVecinos(core), crosstalkPerUnitLength, link.getDistance()));
                     BigDecimal crosstalk = fsVecino.getCrosstalk().add(crosstalkASumar);
@@ -171,6 +184,7 @@ public class Algorithms {
         }
         return true;
     }
+
 
     public static Candidates calculateBFRForCore(List<FrequencySlot> frequencySlotList) {
         Candidates metrics = new Candidates();
