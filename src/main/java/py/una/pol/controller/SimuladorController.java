@@ -133,15 +133,13 @@ public class SimuladorController {
         printFSEntryStatus(net, options.getCores(), options.getCapacity());
 
         // Al final de tu método simular
-        countFreeFS(net, options.getCores());
+        //countFreeFS(net, options.getCores());
 
 
         //System.out.println(obtenerDatosParaNucleo(responses, options.getCapacity()));
 
 
-        //int maxDistance = findMaxDistance(net);
 
-        //System.out.println("La distancia máxima entre dos nodos es: " + maxDistance);
 
 
         return responses;
