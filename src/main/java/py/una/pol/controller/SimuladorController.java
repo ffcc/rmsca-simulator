@@ -112,6 +112,8 @@ public class SimuladorController {
                 //imprimimos el path de origen a destino
                 //((EstablisedRoute) establisedRoute).printDemandNodes();
                 response.setPath((establishedRoute).printDemandNodes());
+                System.out.println( "NUCLEO: " + establishedRoute.getPathCores() + ", FS: " + establishedRoute.getFs() + ", FsIndexBegin: " + establishedRoute.getFsIndexBegin());
+
             }
 
             responses.add(response);
