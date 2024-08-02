@@ -42,29 +42,20 @@ public class Algorithms {
                 for (int i = 0; i <= fsMax - demand.getFs(); i++) {
                     List<Link> freeLinks = new ArrayList<>();
                     List<Integer> kspCores = new ArrayList<>();
-                    Candidates bestCandidate = null;
                     List<BigDecimal> crosstalkBlockList = new ArrayList<>();
 
-
                     for (Link link : ksp.getEdgeList()) {
-
-                        List<Candidates> candidates = new ArrayList<>();
                         for (int core = 0; core < cores; core++) {
-                            // Calcular el índice de fin para evitar desbordamientos
                             int endIndex = Math.min(i + demand.getFs(), link.getCores().get(core).getFs().size());
                             List<FrequencySlot> fsBlock = link.getCores().get(core).getFs().subList(i, i + endIndex);
 
-                            // Se inicializa la lista de valores de crosstalk para cada slot de frecuencia del bloque
                             crosstalkBlockList.clear();
                             for (int fsCrosstalkIndex = 0; fsCrosstalkIndex < fsBlock.size(); fsCrosstalkIndex++) {
                                 crosstalkBlockList.add(BigDecimal.ZERO);
                             }
 
-                            //principio de continuidad, verifica si el bloque tiene todos los FS libres
                             if (isFSBlockFree(fsBlock)) {
-                                //verifica el crosstalk en el bloque actual
                                 if (isFsBlockCrosstalkFree(fsBlock, maxCrosstalk, crosstalkBlockList))
-                                    //verifica el crosstalk en los vecinos
                                     if (isNextToCrosstalkFreeCores(link, maxCrosstalk, core, i, demand.getFs(), crosstalkPerUnitLength)) {
                                         freeLinks.add(link);
                                         kspCores.add(core);
@@ -77,7 +68,6 @@ public class Algorithms {
                                             crosstalkBlockList.set(crosstalkFsListIndex, crosstalkRuta);
                                         }
                                         core = cores;
-                                        // Si todos los enlaces tienen el mismo bloque de FS libre, se agrega la ruta a la lista de rutas establecidas.
                                         if (freeLinks.size() == ksp.getEdgeList().size()) {
                                             kspPlaced.add(shortestPaths.get(selectedIndex));
                                             kspPlacedCores.add(kspCores);
@@ -85,54 +75,63 @@ public class Algorithms {
                                             i = capacity;
                                         }
                                     }
-
-                                //calculamos el BFR para el nucleo actual
-                                //Candidates candidate = calculateBFRForCore(link.getCores().get(core).getFs());
-                                //calculamos el crosstalk para el nucleo actual
-                                // candidate.setCrosstalk(calculateCrosstalk());
-
-
-                                //candidates.add(candidate);
-
-
-                                if (freeLinks.size() == ksp.getEdgeList().size()) {
-                                    kspPlaced.add(shortestPaths.get(selectedIndex));
-                                    kspPlacedCores.add(kspCores);
-                                    k = shortestPaths.size();
-                                    i = capacity;
-                                }
-
                             }
                         }
-
-
                     }
                 }
 
                 fsMax++;
                 k++;
-
             }
 
             EstablishedRoute establisedRoute;
             if (fsIndexBegin != null && !kspPlaced.isEmpty()) {
-                establisedRoute = new EstablishedRoute(kspPlaced.get(0).getEdgeList(),
-                        fsIndexBegin, demand.getFs(), demand.getSource(), demand.getDestination(), kspPlacedCores.get(0));
+                double bestBFR = Double.MAX_VALUE;
+                int bestMSI = Integer.MAX_VALUE;
+                int bestPathIndex = -1;
+
+                for (int pathIndex = 0; pathIndex < kspPlaced.size(); pathIndex++) {
+                    List<Link> pathLinks = kspPlaced.get(pathIndex).getEdgeList();
+                    List<Integer> pathCores = kspPlacedCores.get(pathIndex);
+                    double pathBFR = Double.MAX_VALUE;
+                    int pathMSI = Integer.MAX_VALUE;
+
+                    for (int linkIndex = 0; linkIndex < pathLinks.size(); linkIndex++) {
+                        Link link = pathLinks.get(linkIndex);
+                        int coreIndex = pathCores.get(linkIndex);
+                        double bfr = calculateBFRForCore(link.getCores().get(coreIndex).getFs());
+                        int msi = calculateMSIForCore(link.getCores().get(coreIndex).getFs());
+
+                        pathBFR = Math.min(pathBFR, bfr);
+                        pathMSI = Math.min(pathMSI, msi);
+                    }
+
+                    if (pathBFR < bestBFR || (pathBFR == bestBFR && pathMSI < bestMSI)) {
+                        bestBFR = pathBFR;
+                        bestMSI = pathMSI;
+                        bestPathIndex = pathIndex;
+                    }
+                }
+
+                if (bestPathIndex != -1) {
+                    establisedRoute = new EstablishedRoute(
+                            kspPlaced.get(bestPathIndex).getEdgeList(),
+                            fsIndexBegin, demand.getFs(), demand.getSource(), demand.getDestination(), kspPlacedCores.get(bestPathIndex)
+                    );
+                } else {
+                    establisedRoute = null;
+                }
             } else {
-                //System.out.println("Bloqueo");
                 establisedRoute = null;
             }
             return establisedRoute;
-
-            /* establecer ruta o retornar null */
-
-
         } catch (Exception e) {
             e.printStackTrace();
         }
 
         return establishedRoute;
     }
+
 
     private static Boolean isFSBlockFree(List<FrequencySlot> bloqueFS) {
         for (FrequencySlot fs : bloqueFS) {
@@ -186,12 +185,9 @@ public class Algorithms {
     }
 
 
-    public static Candidates calculateBFRForCore(List<FrequencySlot> frequencySlotList) {
-        Candidates metrics = new Candidates();
-
+    public static double calculateBFRForCore(List<FrequencySlot> frequencySlotList) {
         double maxFreeBlockSize = 0; // Inicialmente no hay bloques libres
         double totalFreeSlots = 0; // Inicialmente no hay ranuras libres
-        int maxOccupiedSlotIndex = -1; // Inicialmente no hay ranuras ocupadas
 
         int currentFreeBlockSize = 0; // Para rastrear el tamaño del bloque libre actual
 
@@ -207,17 +203,25 @@ public class Algorithms {
             } else {
                 // Si la ranura de frecuencia está ocupada
                 currentFreeBlockSize = 0;
+            }
+        }
 
+        // Calcular el BFR
+        return 1 - maxFreeBlockSize / totalFreeSlots;
+    }
+
+    public static int calculateMSIForCore(List<FrequencySlot> frequencySlotList) {
+        int maxOccupiedSlotIndex = -1; // Inicialmente no hay ranuras ocupadas
+
+        for (int i = 0; i < frequencySlotList.size(); i++) {
+            FrequencySlot fs = frequencySlotList.get(i);
+            if (!fs.isFree()) {
                 // Actualizar el índice del mayor slot ocupado si es necesario
                 maxOccupiedSlotIndex = Math.max(maxOccupiedSlotIndex, i);
             }
         }
 
-        // Asignar los valores calculados al objeto BFR
-        metrics.setBfr(1 - maxFreeBlockSize / totalFreeSlots);
-        metrics.setMsi(maxOccupiedSlotIndex);
-
-        return metrics;
+        return maxOccupiedSlotIndex;
     }
 
     // Método para imprimir los caminos en kspPlaced
