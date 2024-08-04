@@ -1,22 +1,20 @@
 package py.una.pol.model;
 
-import java.util.List;
 
 public class Response {
     private int nroDemanda;
-    private int  cantRutasActivas;
     private int origen;
     private int destino;
     private int core;
-    private int fsIndexBegin;
     private int fs;
+    private int fsIndexBegin;
     private String path;
     private int bitrate;
     private String modulation;
+    private int  cantRutasActivas;
     private boolean block;
     private int slotBlock;
     private int MSI;
-
     private int fsMax;
 
     public int getNroDemanda() {

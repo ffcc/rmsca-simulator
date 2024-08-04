@@ -35,8 +35,6 @@ public class SimuladorController {
         List<EstablishedRoute> establishedRoutes = new ArrayList<>();
         List<GraphPath<Integer, Link>> kspaths = new ArrayList<>();
         List<Demand> demands;
-        int fsMax = 0;
-        int previousFSMax = 0;
         int demandsQ = 0, blocksQ = 0;
 
         //se crea la topologia con los parámetros seleccionados
@@ -63,7 +61,6 @@ public class SimuladorController {
             response.setBitrate(demand.getBitRate());
             response.setModulation(demand.getModulation());
             response.setFs(demand.getFs());
-            previousFSMax = fsMax;
 
             System.out.println("-------PROCESANDO NUEVA DEMANDA----------");
             response.setNroDemanda(demandsQ);
@@ -90,7 +87,7 @@ public class SimuladorController {
             }
 
             //busqueda de caminos disponibles, para establecer los enlaces
-            EstablishedRoute establishedRoute = Algorithms.findBestRoute(demand, net, kspaths, options.getCores(), options.getCapacity(), fsMax, options.getMaxCrosstalk(), options.getCrosstalkPerUnitLenght());
+            EstablishedRoute establishedRoute = Algorithms.findBestRoute(demand, kspaths, options.getCores(), options.getCapacity(), options.getMaxCrosstalk(), options.getCrosstalkPerUnitLenght());
 
             if (establishedRoute == null) {
                 response.setBlock(true);
@@ -124,25 +121,13 @@ public class SimuladorController {
         System.out.println("Resumen general del simulador");
         System.out.println("Cantidad de demandas: " + demandsQ);
         System.out.println("Cantidad de bloqueos: " + blocksQ);
-        //System.out.println("Cantidad de defragmentaciones: " + defragsQ);
-        //System.out.println("Cantidad de desfragmentaciones fallidas: " + defragsF);
         System.out.println("Fin Simulación");
 
         // Llama al método para escribir en el archivo CSV
         writeResponsesToCSV(responses);
 
-        // Al final de tu método simular
+        // Dibuja los FS utilizados y libres
         printFSEntryStatus(net, options.getCores(), options.getCapacity());
-
-        // Al final de tu método simular
-        //countFreeFS(net, options.getCores());
-
-
-        //System.out.println(obtenerDatosParaNucleo(responses, options.getCapacity()));
-
-
-
-
 
         return responses;
     }
@@ -199,12 +184,12 @@ public class SimuladorController {
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
             // Escribir encabezados
-            writer.write("nroDemanda,cantRutasActivas,origen,destino,core,fsIndexBegin,fs,path,bitrate,modulation,block,slotBlock,MSI");
+            writer.write("nroDemanda,origen,destino,core,fs,fsIndexBegin,path,bitrate,modulation,cantRutasActivas,block,slotBlock,MSI");
             writer.newLine();
 
             // Escribir datos de cada respuesta
             for (Response response : responses) {
-                writer.write(response.getNroDemanda() + "," + response.getCantRutasActivas() + "," + response.getOrigen() + "," + response.getDestino() + "," + response.getCore() + "," + response.getFsIndexBegin() + "," + response.getFs() + "," + response.getPath() + "," + response.getBitrate() + "," + response.getModulation() + "," + response.isBlock() + "," + response.getSlotBlock() + "," + response.getMSI());
+                writer.write(response.getNroDemanda() + "," + response.getOrigen() + "," + response.getDestino() + "," + response.getCore() + "," +  response.getFs() + "," + response.getFsIndexBegin() + "," + response.getPath() + "," + response.getBitrate() + "," + response.getModulation() + "," + response.getCantRutasActivas() +"," + response.isBlock() + "," + response.getSlotBlock() + "," + response.getMSI());
                 writer.newLine();
             }
 
@@ -213,79 +198,6 @@ public class SimuladorController {
             e.printStackTrace();
         }
     }
-
-    private String obtenerDatosParaNucleo(List<Response> responses, int capacity) {
-        StringBuilder datos = new StringBuilder();
-        for (Response response : responses) {
-            datos.append("- Núcleo ").append(response.getCore()).append("\n");
-            datos.append("  - Camino ").append(response.getOrigen()).append(" --> ").append(response.getDestino()).append(":\n");
-            // Agregar los detalles de cada enlace excluyendo el atributo "core"
-            datos.append("    - Número de Demanda: ").append(response.getNroDemanda()).append("\n");
-            // Calcular y agregar la representación de la barra de utilización de FS con capacidad
-            String barraFS = generarBarraFS(response.getFsIndexBegin(), response.getFs(), capacity);
-            datos.append("    - Barra de utilización de FS: ").append(barraFS).append("\n");
-            // Calcular y agregar la representación de puntos de FS
-            String puntosFS = generarPuntosFS(response.getFsIndexBegin(), response.getFs());
-            datos.append("    - Puntos de FS: ").append(puntosFS).append("\n");
-            // Excluir el atributo "core" del resultado
-            // Ejemplo:
-            // datos.append("    - Bitrate: ").append(response.getBitrate()).append("\n");
-        }
-        return datos.toString();
-    }
-
-
-    private String generarPuntosFS(int fsIndexBegin, int fs) {
-        StringBuilder puntos = new StringBuilder("[");
-        for (int i = 0; i < fsIndexBegin; i++) {
-            puntos.append(". "); // Punto para FS no ocupados
-        }
-        for (int i = 0; i < fs; i++) {
-            puntos.append("█ "); // Carácter █ para FS ocupados
-        }
-        puntos.append("]");
-        return puntos.toString();
-    }
-
-    private String generarBarraFS(int fsIndexBegin, int fs, int capacity) {
-        StringBuilder barra = new StringBuilder("[");
-        int fsEnd = fsIndexBegin + fs;
-
-        for (int i = 0; i < 10; i++) { // Siempre muestra 10 ranuras
-            if (i >= fsIndexBegin && i < fsEnd) {
-                if (i - fsIndexBegin < capacity) {
-                    barra.append("█ "); // Carácter █ para FS ocupados dentro de la capacidad
-                } else {
-                    barra.append(". "); // Punto para FS ocupados fuera de la capacidad
-                }
-            } else {
-                barra.append("░ "); // Punto para FS no ocupados
-            }
-        }
-
-        barra.append("]");
-        return barra.toString();
-    }
-
-    public void countFreeFS(Graph<Integer, Link> net, int cores) {
-        int totalFreeFS = 0;
-
-        for (Link link : net.edgeSet()) {
-            for (int core = 0; core < cores; core++) {
-                int freeFSOnLink = 0;
-                for (FrequencySlot fs : link.getCores().get(core).getFs()) {
-                    if (fs.isFree()) {
-                        freeFSOnLink++;
-                    }
-                }
-                totalFreeFS += freeFSOnLink;
-                System.out.println("Enlace DE: " + link.getFrom() + ", A: " + link.getTo() + ", Núcleo " + core + ": FS Libres = " + freeFSOnLink);
-            }
-        }
-
-        System.out.println("Total de FS Libres en la Red: " + totalFreeFS);
-    }
-
 
     public void printFSEntryStatus(Graph<Integer, Link> net, int cores, int capacity) {
         for (Link link : net.edgeSet()) {
@@ -300,6 +212,5 @@ public class SimuladorController {
             }
         }
     }
-
 
 }
