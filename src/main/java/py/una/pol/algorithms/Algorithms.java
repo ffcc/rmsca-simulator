@@ -38,8 +38,6 @@ public class Algorithms {
                 // Actualizar fsMax si es menor que la demanda
                 fsMax = Math.max(fsMax, demand.getFs());
 
-                System.out.println("FSMAX: " + fsMax + ", FS: " + demand.getFs());
-
                 boolean foundPath = false;
 
                 while (!foundPath && fsMax <= capacity - demand.getFs()) {
@@ -120,7 +118,8 @@ public class Algorithms {
                 }
 
                 if (bestPathIndex != -1) {
-                    establisedRoute = new EstablishedRoute(kspPlaced.get(bestPathIndex).getEdgeList(), fsIndexBegin, demand.getFs(), demand.getSource(), demand.getDestination(), kspPlacedCores.get(bestPathIndex));
+                    System.out.println("Demanda establecida en FSMAX: " + fsMax + ", BFR: " + bestBFR + ", MSI: " + bestMSI);
+                    establisedRoute = new EstablishedRoute(kspPlaced.get(bestPathIndex).getEdgeList(), fsIndexBegin, demand.getFs(), demand.getSource(), demand.getDestination(), kspPlacedCores.get(bestPathIndex), bestBFR, bestMSI);
                 } else {
                     establisedRoute = null;
                 }

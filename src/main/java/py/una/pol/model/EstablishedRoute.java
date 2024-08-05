@@ -5,22 +5,27 @@ import java.util.List;
 
 public class EstablishedRoute {
     private int fsIndexBegin;
-        private int fs;
+    private int fs;
     private int from;
     private int to;
     private List<Link> path;
     private List<Integer> pathCores;
     private int fsMax;
+    private double bfr;
+    private int msi;
+
 
     public EstablishedRoute() {
     }
-    public EstablishedRoute(List path, int fsIndexBegin, int fs, int from, int to, List<Integer> pathCores) {
+    public EstablishedRoute(List path, int fsIndexBegin, int fs, int from, int to, List<Integer> pathCores, double bfr, int msi) {
         this.path = path;
         this.fsIndexBegin = fsIndexBegin;
         this.fs = fs;
         this.from = from;
         this.to = to;
         this.pathCores = pathCores;
+        this.bfr = bfr;
+        this.msi = msi;
     }
 
     public int getFsIndexBegin() {
@@ -82,6 +87,23 @@ public class EstablishedRoute {
     public int getFsIndexEnd() {
         return (this.fsIndexBegin + this.fs) - 1;
     }
+
+    public double getBfr() {
+        return bfr;
+    }
+
+    public void setBfr(double bfr) {
+        this.bfr = bfr;
+    }
+
+    public double getMsi() {
+        return msi;
+    }
+
+    public void setMsi(int msi) {
+        this.msi = msi;
+    }
+
 
     public String printDemandNodes() {
         List<Integer> pathNodes = new ArrayList<>();
