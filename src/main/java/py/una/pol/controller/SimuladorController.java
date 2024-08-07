@@ -167,22 +167,45 @@ public class SimuladorController {
     }
 
     public static void writeResponsesToCSV(Options options, int fsMax) {
-        String filePath = "src\\main\\resources\\salida\\salida.csv"; // Ruta del archivo CSV en la carpeta resources\salida
+        String filePath = "src/main/resources/salida/salida.csv"; // Ruta del archivo CSV en la carpeta resources/salida
+        //String filePath = "src\\main\\resources\\salida\\salida.csv"; //para windows
 
+
+        // Verifica si la ruta es correcta y crea el archivo si no existe
+        File file = new File(filePath);
+        try {
+            if (file.getParentFile() != null) {
+                if (!file.getParentFile().exists()) {
+                    file.getParentFile().mkdirs(); // Crea los directorios necesarios
+                }
+            }
+            if (file.createNewFile()) {
+                System.out.println("El archivo ha sido creado: " + file.getAbsolutePath());
+            } else {
+                System.out.println("El archivo ya existe: " + file.getAbsolutePath());
+            }
+        } catch (IOException e) {
+            System.err.println("Error al crear el archivo: " + e.getMessage());
+            e.printStackTrace();
+            return;
+        }
+
+        // Escribir en el archivo
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath, true))) {
-            // Escribir encabezados si el archivo no existe o está vacío
-            File file = new File(filePath);
+            // Escribir encabezados si el archivo está vacío
             if (file.length() == 0) {
-                writer.write("Topologia,KSP(caminos),Ordenamiento,fsMax,promedio");
+                writer.write("Topologia,KSP(caminos),Ordenamiento,fsMax");
                 writer.newLine();
             }
 
             // Escribir datos de cada respuesta
-            writer.write(options.getTopology() + "," + options.getShortestAlg() + "," + options.getSortingDemands() + "," + fsMax + "," + 0);
+            String line = options.getTopology() + "," + options.getShortestAlg() + "," + options.getSortingDemands() + "," + fsMax;
+            writer.write(line);
             writer.newLine();
 
             System.out.println("Los datos se han guardado en el archivo CSV: " + filePath);
         } catch (IOException e) {
+            System.err.println("Error al escribir en el archivo: " + e.getMessage());
             e.printStackTrace();
         }
     }
