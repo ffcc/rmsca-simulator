@@ -17,10 +17,7 @@ import py.una.pol.utils.DemandsGenerator;
 import py.una.pol.utils.ResourceReader;
 import py.una.pol.utils.Utils;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.util.*;
 
 @RestController
@@ -114,7 +111,7 @@ public class SimuladorController {
         response.setFsMax(fsMax);
 
         // Llama al método para escribir en el archivo CSV
-        //writeResponsesToCSV(responses);
+        writeResponsesToCSV(options, fsMax);
 
         // Dibuja los FS utilizados y libres
         //printFSEntryStatus(net, options.getCores(), options.getCapacity());
@@ -169,19 +166,20 @@ public class SimuladorController {
         return null;
     }
 
-    public static void writeResponsesToCSV(List<Response> responses) {
+    public static void writeResponsesToCSV(Options options, int fsMax) {
         String filePath = "src\\main\\resources\\salida\\salida.csv"; // Ruta del archivo CSV en la carpeta resources\salida
 
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
-            // Escribir encabezados
-            writer.write("nroDemanda,origen,destino,core,fs,fsIndexBegin,path,bitrate,modulation,cantRutasActivas,block,slotBlock,MSI");
-            writer.newLine();
-
-            // Escribir datos de cada respuesta
-            for (Response response : responses) {
-                //writer.write(response.getNroDemanda() + "," + response.getOrigen() + "," + response.getDestino() + "," + response.getCore() + "," +  response.getFs() + "," + response.getFsIndexBegin() + "," + response.getPath() + "," + response.getBitrate() + "," + response.getModulation() + "," + response.getCantRutasActivas() +"," + response.isBlock() + "," + response.getSlotBlock() + "," + response.getMSI());
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath, true))) {
+            // Escribir encabezados si el archivo no existe o está vacío
+            File file = new File(filePath);
+            if (file.length() == 0) {
+                writer.write("Topologia,KSP(caminos),Ordenamiento,fsMax,promedio");
                 writer.newLine();
             }
+
+            // Escribir datos de cada respuesta
+            writer.write(options.getTopology() + "," + options.getShortestAlg() + "," + options.getSortingDemands() + "," + fsMax + "," + 0);
+            writer.newLine();
 
             System.out.println("Los datos se han guardado en el archivo CSV: " + filePath);
         } catch (IOException e) {
