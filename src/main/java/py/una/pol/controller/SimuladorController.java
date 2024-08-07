@@ -77,7 +77,7 @@ public class SimuladorController {
                 GraphPath<Integer, Link> shortestPath = shortestPathFinder.getShortestPath(demand.getSource(), demand.getDestination());
                 // Agrega el camino a la lista kspaths
                 kspaths.add(shortestPath);
-            } if (options.getShortestAlg().equals("k3")) {
+            } else if (options.getShortestAlg().equals("k3")) {
                 // Retorna los 3 caminos más cortos de fuente a destino
                 List<GraphPath<Integer, Link>> kShortestPaths = shortestPathFinder.getKShortestPaths(demand.getSource(), demand.getDestination(), 3);
                 for (GraphPath<Integer, Link> path : kShortestPaths) {
