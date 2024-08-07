@@ -31,7 +31,7 @@ public class SimuladorController {
 
     @PostMapping(path = "/simular")
     @ApiOperation(value = "Simula las demandas con las opciones proporcionadas")
-    public List<Response> simular(@ApiParam(value = "Opciones para la simulación de demandas", required = true) @RequestBody Options options) {
+    public Response simular(@ApiParam(value = "Opciones para la simulación de demandas", required = true) @RequestBody Options options) {
         List<EstablishedRoute> establishedRoutes = new ArrayList<>();
         List<GraphPath<Integer, Link>> kspaths = new ArrayList<>();
         List<Demand> demands;
@@ -53,21 +53,9 @@ public class SimuladorController {
             DemandSorter.sortByDistanceDescending(demands); // Orden descendente
         }
 
-        //Procesamos las demandas
-        List<Response> responses = new ArrayList<>();
         for (Demand demand : demands) {
-
-            Response response = new Response();
-            response.setBitrate(demand.getBitRate());
-            response.setModulation(demand.getModulation());
-            response.setFs(demand.getFs());
-
             System.out.println("-------PROCESANDO NUEVA DEMANDA----------");
-            response.setNroDemanda(demandsQ);
-            response.setCantRutasActivas(establishedRoutes.size());
-            response.setOrigen(demand.getSource());
-            response.setDestino(demand.getDestination());
-            System.out.println("Demanda: " + response.getNroDemanda() + ", Origen: " + demand.getSource() + ", Destino: " + demand.getDestination() + ", Cantidad de rutas en uso: " + establishedRoutes.size());
+            System.out.println("Demanda: " + demandsQ + ", Origen: " + demand.getSource() + ", Destino: " + demand.getDestination() + ", Cantidad de rutas en uso: " + establishedRoutes.size());
             demandsQ++;
             kspaths.clear();
 
@@ -97,12 +85,8 @@ public class SimuladorController {
             EstablishedRoute establishedRoute = Algorithms.findBestRoute(demand, kspaths, options.getCores(), options.getCapacity(), fsMax, options.getMaxCrosstalk(), options.getCrosstalkPerUnitLenght());
 
             if (establishedRoute == null) {
-                response.setBlock(true);
                 System.out.println("Demanda " + demandsQ + " BLOQUEADA ");
-                //response.setSlotBlock(demand.getFs());
-                //blocked = true;
                 demand.setBlocked(true);
-                //slotsBlocked += demand.getFs();
                 blocksQ++;
 
                 break;
@@ -110,19 +94,11 @@ public class SimuladorController {
             } else {
                 establishedRoutes.add(establishedRoute);
                 Utils.assignFs(net, establishedRoute, options.getCrosstalkPerUnitLenght());
-                //response.setCore((establishedRoute).getCore());
-                response.setFsIndexBegin((establishedRoute).getFsIndexBegin());
-                response.setFsMax((establishedRoute).getFsMax());
-                //imprimimos el path de origen a destino
-                //((EstablisedRoute) establisedRoute).printDemandNodes();
-                response.setPath((establishedRoute).printDemandNodes());
                 System.out.println( "NUCLEO: " + establishedRoute.getPathCores() + ", FS: " + establishedRoute.getFs() + ", FsIndexBegin: " + establishedRoute.getFsIndexBegin());
 
                 fsMax = Math.max(fsMax, establishedRoute.getFsMax());
 
             }
-
-            responses.add(response);
         }
 
         Map<String, Boolean> map = new LinkedHashMap<>();
@@ -133,13 +109,17 @@ public class SimuladorController {
         System.out.println("FSMAX: " + fsMax);
         System.out.println("Fin Simulación");
 
+        Response response = new Response();
+        response.setCantDemandas(demandsQ);
+        response.setFsMax(fsMax);
+
         // Llama al método para escribir en el archivo CSV
-        writeResponsesToCSV(responses);
+        //writeResponsesToCSV(responses);
 
         // Dibuja los FS utilizados y libres
-        printFSEntryStatus(net, options.getCores(), options.getCapacity());
+        //printFSEntryStatus(net, options.getCores(), options.getCapacity());
 
-        return responses;
+        return response;
     }
 
     private int getCore(int limit, boolean[] tested) {
@@ -199,7 +179,7 @@ public class SimuladorController {
 
             // Escribir datos de cada respuesta
             for (Response response : responses) {
-                writer.write(response.getNroDemanda() + "," + response.getOrigen() + "," + response.getDestino() + "," + response.getCore() + "," +  response.getFs() + "," + response.getFsIndexBegin() + "," + response.getPath() + "," + response.getBitrate() + "," + response.getModulation() + "," + response.getCantRutasActivas() +"," + response.isBlock() + "," + response.getSlotBlock() + "," + response.getMSI());
+                //writer.write(response.getNroDemanda() + "," + response.getOrigen() + "," + response.getDestino() + "," + response.getCore() + "," +  response.getFs() + "," + response.getFsIndexBegin() + "," + response.getPath() + "," + response.getBitrate() + "," + response.getModulation() + "," + response.getCantRutasActivas() +"," + response.isBlock() + "," + response.getSlotBlock() + "," + response.getMSI());
                 writer.newLine();
             }
 
