@@ -23,13 +23,13 @@ public class Algorithms {
      *
      * @return EstablisedRoute: Objeto que representa la ruta establecida con asignación de espectro.
      */
-    public static EstablishedRoute findBestRoute(Demand demand, List<GraphPath<Integer, Link>> shortestPaths, int cores, int capacity, BigDecimal maxCrosstalk, Double crosstalkPerUnitLength) {
+    public static EstablishedRoute findBestRoute(Demand demand, List<GraphPath<Integer, Link>> shortestPaths, int cores, int capacity, int fsMax, BigDecimal maxCrosstalk, Double crosstalkPerUnitLength) {
         EstablishedRoute establishedRoute = null;
         List<GraphPath<Integer, Link>> kspPlaced = new ArrayList<>();
         List<List<Integer>> kspPlacedCores = new ArrayList<>();
         Integer fsIndexBegin = null;
         Integer selectedIndex = null;
-        int fsMax = 0, k = 0;
+        int k = 0;
 
         try {
             while (k < shortestPaths.size() && shortestPaths.get(k) != null) {
@@ -119,7 +119,7 @@ public class Algorithms {
 
                 if (bestPathIndex != -1) {
                     System.out.println("Demanda establecida en FSMAX: " + fsMax + ", BFR: " + bestBFR + ", MSI: " + bestMSI);
-                    establisedRoute = new EstablishedRoute(kspPlaced.get(bestPathIndex).getEdgeList(), fsIndexBegin, demand.getFs(), demand.getSource(), demand.getDestination(), kspPlacedCores.get(bestPathIndex), bestBFR, bestMSI);
+                    establisedRoute = new EstablishedRoute(kspPlaced.get(bestPathIndex).getEdgeList(), fsIndexBegin, demand.getFs(), demand.getSource(), demand.getDestination(), kspPlacedCores.get(bestPathIndex), fsMax, bestBFR, bestMSI);
                 } else {
                     establisedRoute = null;
                 }

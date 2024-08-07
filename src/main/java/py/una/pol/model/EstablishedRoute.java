@@ -17,13 +17,14 @@ public class EstablishedRoute {
 
     public EstablishedRoute() {
     }
-    public EstablishedRoute(List path, int fsIndexBegin, int fs, int from, int to, List<Integer> pathCores, double bfr, int msi) {
+    public EstablishedRoute(List path, int fsIndexBegin, int fs, int from, int to, List<Integer> pathCores, int fsMax, double bfr, int msi) {
         this.path = path;
         this.fsIndexBegin = fsIndexBegin;
         this.fs = fs;
         this.from = from;
         this.to = to;
         this.pathCores = pathCores;
+        this.fsMax = fsMax;
         this.bfr = bfr;
         this.msi = msi;
     }

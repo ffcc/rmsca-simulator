@@ -35,7 +35,7 @@ public class SimuladorController {
         List<EstablishedRoute> establishedRoutes = new ArrayList<>();
         List<GraphPath<Integer, Link>> kspaths = new ArrayList<>();
         List<Demand> demands;
-        int demandsQ = 0, blocksQ = 0;
+        int demandsQ = 0, blocksQ = 0, fsMax = 0;
 
         //se crea la topologia con los parámetros seleccionados
         Graph<Integer, Link> net = createTopology(options.getTopology(), options.getCores(), options.getFsWidth(), options.getCapacity());
@@ -71,12 +71,19 @@ public class SimuladorController {
             demandsQ++;
             kspaths.clear();
 
-            //se ejecuta dijkstra - ksp como sortest-Algorithm
-            if (options.getSortestAlg().equals("Dijkstra")) {
+            //se ejecuta k1 = Dijkstra, k3 = ksp (3 caminos), k5 = ksp (5 caminos)
+            if (options.getShortestAlg().equals("k1")) {
                 // Retorna el camino más corto de fuente a destino
                 GraphPath<Integer, Link> shortestPath = shortestPathFinder.getShortestPath(demand.getSource(), demand.getDestination());
                 // Agrega el camino a la lista kspaths
                 kspaths.add(shortestPath);
+            } if (options.getShortestAlg().equals("k3")) {
+                // Retorna los 3 caminos más cortos de fuente a destino
+                List<GraphPath<Integer, Link>> kShortestPaths = shortestPathFinder.getKShortestPaths(demand.getSource(), demand.getDestination(), 3);
+                for (GraphPath<Integer, Link> path : kShortestPaths) {
+                    // Agrega cada camino a la lista kspaths
+                    kspaths.add(path);
+                }
             } else {
                 // Retorna los 5 caminos más cortos de fuente a destino
                 List<GraphPath<Integer, Link>> kShortestPaths = shortestPathFinder.getKShortestPaths(demand.getSource(), demand.getDestination(), 5);
@@ -87,7 +94,7 @@ public class SimuladorController {
             }
 
             //busqueda de caminos disponibles, para establecer los enlaces
-            EstablishedRoute establishedRoute = Algorithms.findBestRoute(demand, kspaths, options.getCores(), options.getCapacity(), options.getMaxCrosstalk(), options.getCrosstalkPerUnitLenght());
+            EstablishedRoute establishedRoute = Algorithms.findBestRoute(demand, kspaths, options.getCores(), options.getCapacity(), fsMax, options.getMaxCrosstalk(), options.getCrosstalkPerUnitLenght());
 
             if (establishedRoute == null) {
                 response.setBlock(true);
@@ -111,6 +118,8 @@ public class SimuladorController {
                 response.setPath((establishedRoute).printDemandNodes());
                 System.out.println( "NUCLEO: " + establishedRoute.getPathCores() + ", FS: " + establishedRoute.getFs() + ", FsIndexBegin: " + establishedRoute.getFsIndexBegin());
 
+                fsMax = Math.max(fsMax, establishedRoute.getFsMax());
+
             }
 
             responses.add(response);
@@ -121,6 +130,7 @@ public class SimuladorController {
         System.out.println("Resumen general del simulador");
         System.out.println("Cantidad de demandas: " + demandsQ);
         System.out.println("Cantidad de bloqueos: " + blocksQ);
+        System.out.println("FSMAX: " + fsMax);
         System.out.println("Fin Simulación");
 
         // Llama al método para escribir en el archivo CSV
