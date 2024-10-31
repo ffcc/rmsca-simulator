@@ -4,6 +4,7 @@ import org.jgrapht.Graph;
 import org.jgrapht.GraphPath;
 import org.jgrapht.graph.DefaultWeightedEdge;
 import py.una.pol.model.*;
+import py.una.pol.utils.DemandsGenerator;
 import py.una.pol.utils.Utils;
 
 import java.math.BigDecimal;
@@ -12,7 +13,7 @@ import java.util.*;
 public class Algorithms {
 
     /*
-     * Algoritmo para establecer rutas utilizando RSA (Routing and Spectrum Assignment) personzalizado.
+     * Algoritmo para establecer rutas utilizando RMSCA (Routing, Modulation, Spectrum and Core Assignment) personzalizado.
      *
      * @param demand: Objeto que representa la demanda de la red.
      * @param net: Grafo de la topología de la red.
@@ -34,6 +35,15 @@ public class Algorithms {
         try {
             while (k < shortestPaths.size() && shortestPaths.get(k) != null) {
                 GraphPath<Integer, Link> ksp = shortestPaths.get(k);
+
+                //calcula la modulacion y fs de la demanda mediante k
+                boolean isModulationValid =  DemandsGenerator.calculateValidModulationAndDemandFs(demand, ksp);
+
+                // Si la modulación no es válida, pasar al siguiente k
+                if (!isModulationValid) {
+                    k++;
+                    continue;  // Saltar al siguiente k si isModulationValid es falso
+                }
 
                 // Actualizar fsMax si es menor que la demanda
                 fsMax = Math.max(fsMax, demand.getFs());

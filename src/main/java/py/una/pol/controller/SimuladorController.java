@@ -114,7 +114,7 @@ public class SimuladorController {
         writeResponsesToCSV(options, fsMax);
 
         // Dibuja los FS utilizados y libres
-        //printFSEntryStatus(net, options.getCores(), options.getCapacity());
+        printFSEntryStatus(net, options.getCores(), options.getCapacity());
 
         return response;
     }
