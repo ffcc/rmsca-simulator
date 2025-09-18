@@ -3,6 +3,9 @@ package py.una.pol.algorithms;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import py.una.pol.domain.KspPath;
+import py.una.pol.domain.RejectedDemand;
+import py.una.pol.domain.Simulation;
 import py.una.pol.model.BitrateInfoDTO;
 import py.una.pol.model.Demand;
 import py.una.pol.model.ModulationInfo;
@@ -44,7 +47,7 @@ public class ModulationCalculator {
         return selectedModulation;
     }
 
-    public boolean calculateFS(Demand demand) {
+    public boolean calculateFS(Simulation simulation, Demand demand, KspPath simulationKsp) {
         try {
             // Obtener la modulación adecuada para la demanda
             String modulation = calculateModulation(demand);
@@ -75,6 +78,14 @@ public class ModulationCalculator {
                 int fs = modulationInfo.getCantidadDeFs();
 
                 if (fs <= 0 || fs > 8) {
+                    simulation.addRejectedDemand(RejectedDemand.builder()
+                            .demand(Simulation.Demand.builder()
+                                    .source(demand.getSource())
+                                    .target(demand.getDestination())
+                                    .bitRate(demand.getBitRate())
+                                    .build())
+                            .reason(RejectedDemand.Reason.NOT_FS_AVAILABLE)
+                            .build());
                     // No hay FS disponibles, reject demand
                     return false;
                 }
@@ -83,15 +94,32 @@ public class ModulationCalculator {
                 demand.setModulation(modulation);
                 demand.setFs(fs);
 
-                System.out.println("bitrate: " + selectedBitrate + ", Modulacion: " + modulation + " y FS: " + fs);
+                if (simulationKsp != null) {
+                    simulationKsp.setModulation(modulation);
+                }
 
                 return true;
             } else {
+                simulation.addRejectedDemand(RejectedDemand.builder()
+                        .demand(Simulation.Demand.builder()
+                                .source(demand.getSource())
+                                .target(demand.getDestination())
+                                .bitRate(demand.getBitRate())
+                                .build())
+                        .reason(RejectedDemand.Reason.PAIR_BITRATE_MODULATION_NOT_FOUND)
+                        .build());
                 // La combinación específica no está presente en el DTO
-                System.out.println("Combinación de bitrate y modulación no encontrada en el DTO");
                 return false;
             }
         } catch (IOException e) {
+            simulation.addRejectedDemand(RejectedDemand.builder()
+                    .demand(Simulation.Demand.builder()
+                            .source(demand.getSource())
+                            .target(demand.getDestination())
+                            .bitRate(demand.getBitRate())
+                            .build())
+                    .reason(RejectedDemand.Reason.UNKNOWN_ERROR)
+                    .build());
             // Manejar la excepción de lectura del archivo JSON
             System.out.println("Error al leer el archivo JSON: " + e.getMessage());
             return false;

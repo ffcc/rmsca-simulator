@@ -3,6 +3,8 @@ package py.una.pol.algorithms;
 import org.jgrapht.Graph;
 import org.jgrapht.GraphPath;
 import org.jgrapht.graph.DefaultWeightedEdge;
+import py.una.pol.domain.KspPath;
+import py.una.pol.domain.Simulation;
 import py.una.pol.model.*;
 import py.una.pol.utils.DemandsGenerator;
 import py.una.pol.utils.Utils;
@@ -24,7 +26,10 @@ public class Algorithms {
      *
      * @return EstablisedRoute: Objeto que representa la ruta establecida con asignación de espectro.
      */
-    public static EstablishedRoute findBestRoute(Demand demand, List<GraphPath<Integer, Link>> shortestPaths, int cores, int capacity, int fsMax, BigDecimal maxCrosstalk, Double crosstalkPerUnitLength) {
+    public static EstablishedRoute findBestRoute(Simulation simulation, Demand demand,
+                                                 List<GraphPath<Integer, Link>> shortestPaths, int cores, int capacity,
+                                                 int fsMax, BigDecimal maxCrosstalk, Double crosstalkPerUnitLength) {
+        var simulationKspPaths = simulation.getDemand(demand.getId()).getKspPaths();
         EstablishedRoute establishedRoute = null;
         List<GraphPath<Integer, Link>> kspPlaced = new ArrayList<>();
         List<List<Integer>> kspPlacedCores = new ArrayList<>();
@@ -35,13 +40,15 @@ public class Algorithms {
         try {
             while (k < shortestPaths.size() && shortestPaths.get(k) != null) {
                 GraphPath<Integer, Link> ksp = shortestPaths.get(k);
+                var simulationKspPath = simulationKspPaths.get(k);
 
                 //calcula la modulacion y fs de la demanda mediante k
-                boolean isModulationValid =  DemandsGenerator.calculateValidModulationAndDemandFs(demand, ksp);
+                boolean isModulationValid =  DemandsGenerator.calculateValidModulationAndDemandFs(simulation, demand, ksp, simulationKspPath);
 
                 // Si la modulación no es válida, pasar al siguiente k
                 if (!isModulationValid) {
                     k++;
+                    simulationKspPath.setStatus(KspPath.KspPathStatus.REJECTED);
                     continue;  // Saltar al siguiente k si isModulationValid es falso
                 }
 
@@ -67,7 +74,7 @@ public class Algorithms {
                                 }
 
                                 if (isFSBlockFree(fsBlock)) {
-                                    if (isFsBlockCrosstalkFree(fsBlock, maxCrosstalk, crosstalkBlockList))
+                                    if (isFsBlockCrosstalkFree(fsBlock, maxCrosstalk, crosstalkBlockList)) {
                                         if (isNextToCrosstalkFreeCores(link, maxCrosstalk, core, i, demand.getFs(), crosstalkPerUnitLength)) {
                                             freeLinks.add(link);
                                             kspCores.add(core);
@@ -85,8 +92,11 @@ public class Algorithms {
                                                 kspPlacedCores.add(kspCores);
                                                 i = capacity;
                                                 foundPath = true;
+                                                simulationKspPath.setStatus(KspPath.KspPathStatus.CANDIDATE);
+                                                simulationKspPath.getCores().addAll(kspCores);
                                             }
                                         }
+                                    }
                                 }
                             }
                         }
@@ -120,6 +130,10 @@ public class Algorithms {
                         pathMSI = Math.min(pathMSI, msi);
                     }
 
+                    var kspPath = simulationKspPaths.get(pathIndex);
+                    kspPath.setBfr(pathBFR);
+                    kspPath.setMsi(pathMSI);
+
                     if (pathBFR < bestBFR || (pathBFR == bestBFR && pathMSI < bestMSI)) {
                         bestBFR = pathBFR;
                         bestMSI = pathMSI;
@@ -128,8 +142,10 @@ public class Algorithms {
                 }
 
                 if (bestPathIndex != -1) {
-                    System.out.println("Demanda establecida en FSMAX: " + fsMax + ", BFR: " + bestBFR + ", MSI: " + bestMSI);
-                    establisedRoute = new EstablishedRoute(kspPlaced.get(bestPathIndex).getEdgeList(), fsIndexBegin, demand.getFs(), demand.getSource(), demand.getDestination(), kspPlacedCores.get(bestPathIndex), fsMax, bestBFR, bestMSI);
+                    simulationKspPaths.get(bestPathIndex).setStatus(KspPath.KspPathStatus.ESTABLISHED);
+                    establisedRoute = new EstablishedRoute(kspPlaced.get(bestPathIndex).getEdgeList(),
+                            fsIndexBegin, demand.getFs(), demand.getSource(), demand.getDestination(),
+                            kspPlacedCores.get(bestPathIndex), fsMax, bestBFR, bestMSI);
                 } else {
                     establisedRoute = null;
                 }

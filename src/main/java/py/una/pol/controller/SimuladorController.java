@@ -5,20 +5,35 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import org.bson.types.Decimal128;
 import org.jgrapht.Graph;
 import org.jgrapht.GraphPath;
 import org.jgrapht.graph.SimpleWeightedGraph;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import py.una.pol.algorithms.Algorithms;
 import py.una.pol.algorithms.ShortestPathFinder;
+import py.una.pol.domain.*;
 import py.una.pol.model.*;
+import py.una.pol.repository.SimulationRepository;
 import py.una.pol.utils.DemandSorter;
 import py.una.pol.utils.DemandsGenerator;
 import py.una.pol.utils.ResourceReader;
 import py.una.pol.utils.Utils;
 
 import java.io.*;
-import java.util.*;
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.IntStream;
+
+import static java.math.BigDecimal.valueOf;
+import static java.util.stream.Collectors.toList;
+import static py.una.pol.utils.DemandsGenerator.BITRATE_DISTRIBUTIONO;
 
 @RestController
 @CrossOrigin(origins = "http://localhost:4200")
@@ -26,9 +41,18 @@ import java.util.*;
 @Api(value = "SimuladorController", description = "Operaciones relacionadas con la simulación de demandas")
 public class SimuladorController {
 
+    @Autowired
+    private SimulationRepository simulationRepository;
+
+    private Simulation simulation;
+
     @PostMapping(path = "/simular")
     @ApiOperation(value = "Simula las demandas con las opciones proporcionadas")
     public Response simular(@ApiParam(value = "Opciones para la simulación de demandas", required = true) @RequestBody Options options) {
+        System.out.println("##################################");
+        System.out.println("Inicio simulación");
+        simulation = buildSimulation(options);
+
         List<EstablishedRoute> establishedRoutes = new ArrayList<>();
         List<GraphPath<Integer, Link>> kspaths = new ArrayList<>();
         List<Demand> demands;
@@ -41,7 +65,8 @@ public class SimuladorController {
         ShortestPathFinder shortestPathFinder = new ShortestPathFinder(net);
 
         //se generan aleatoriamente las demandas, de acuerdo a la cantidad proporcionadas por parámetro
-        demands = DemandsGenerator.generateAndValidateDemands(options.getDemandsQuantity(), net, shortestPathFinder);
+        demands = DemandsGenerator.generateAndValidateDemands(simulation, options.getDemandsQuantity(), net,
+                shortestPathFinder);
 
         // Ordenar en función del parámetro ascendente, descendente y aleatorio seria como viene
         if (options.getSortingDemands().equalsIgnoreCase("ASC")) {
@@ -50,9 +75,9 @@ public class SimuladorController {
             DemandSorter.sortByDistanceDescending(demands); // Orden descendente
         }
 
-        for (Demand demand : demands) {
-            System.out.println("-------PROCESANDO NUEVA DEMANDA----------");
-            System.out.println("Demanda: " + demandsQ + ", Origen: " + demand.getSource() + ", Destino: " + demand.getDestination() + ", Cantidad de rutas en uso: " + establishedRoutes.size());
+        demands.forEach(this::addDemandIntoSimulation);
+
+        for (var demand : demands) {
             demandsQ++;
             kspaths.clear();
 
@@ -65,36 +90,32 @@ public class SimuladorController {
             } else if (options.getShortestAlg().equals("k3")) {
                 // Retorna los 3 caminos más cortos de fuente a destino
                 List<GraphPath<Integer, Link>> kShortestPaths = shortestPathFinder.getKShortestPaths(demand.getSource(), demand.getDestination(), 3);
-                for (GraphPath<Integer, Link> path : kShortestPaths) {
-                    // Agrega cada camino a la lista kspaths
-                    kspaths.add(path);
-                }
+                // Agrega todos los caminos a la lista kspaths
+                kspaths.addAll(kShortestPaths);
             } else {
                 // Retorna los 5 caminos más cortos de fuente a destino
                 List<GraphPath<Integer, Link>> kShortestPaths = shortestPathFinder.getKShortestPaths(demand.getSource(), demand.getDestination(), 5);
-                for (GraphPath<Integer, Link> path : kShortestPaths) {
-                    // Agrega cada camino a la lista kspaths
-                    kspaths.add(path);
-                }
+                // Agrega todos los caminos a la lista kspaths
+                kspaths.addAll(kShortestPaths);
             }
 
+            kspaths.forEach(kspPath -> addKspPathIntoSimulation(kspPath, demand.getId()));
+
             //busqueda de caminos disponibles, para establecer los enlaces
-            EstablishedRoute establishedRoute = Algorithms.findBestRoute(demand, kspaths, options.getCores(), options.getCapacity(), fsMax, options.getMaxCrosstalk(), options.getCrosstalkPerUnitLenght());
+            EstablishedRoute establishedRoute = Algorithms.findBestRoute(simulation, demand, kspaths, options.getCores(),
+                    options.getCapacity(), fsMax, options.getMaxCrosstalk(), options.getCrosstalkPerUnitLenght());
 
             if (establishedRoute == null) {
-                System.out.println("Demanda " + demandsQ + " BLOQUEADA ");
                 demand.setBlocked(true);
                 blocksQ++;
-
+                simulation.getDemand(demand.getId()).setStatus(Simulation.Demand.DemandStatus.BLOCKED);
                 break;
-
             } else {
                 establishedRoutes.add(establishedRoute);
-                Utils.assignFs(net, establishedRoute, options.getCrosstalkPerUnitLenght());
-                System.out.println( "NUCLEO: " + establishedRoute.getPathCores() + ", FS: " + establishedRoute.getFs() + ", FsIndexBegin: " + establishedRoute.getFsIndexBegin());
+                Utils.assignFs(simulation, net, establishedRoute, options.getCrosstalkPerUnitLenght());
 
                 fsMax = Math.max(fsMax, establishedRoute.getFsMax());
-
+                simulation.getDemand(demand.getId()).setStatus(Simulation.Demand.DemandStatus.ACTIVE);
             }
         }
 
@@ -105,65 +126,75 @@ public class SimuladorController {
         System.out.println("Cantidad de bloqueos: " + blocksQ);
         System.out.println("FSMAX: " + fsMax);
         System.out.println("Fin Simulación");
+        System.out.println("##################################");
 
         Response response = new Response();
         response.setCantDemandas(demandsQ);
         response.setFsMax(fsMax);
 
-        // Llama al método para escribir en el archivo CSV
-        writeResponsesToCSV(options, fsMax);
-
-        // Dibuja los FS utilizados y libres
-        printFSEntryStatus(net, options.getCores(), options.getCapacity());
+        var result = Result.builder()
+                .maxFs(fsMax)
+                .maxBlocks(blocksQ)
+                .build();
+        simulation.setResult(result);
+        simulation.setEndAt(LocalDateTime.now());
+        simulationRepository.save(simulation);
 
         return response;
     }
 
-    private int getCore(int limit, boolean[] tested) {
-        Random r = new Random();
-        int core = r.nextInt(limit);
-        while (tested[core]) {
-            core = r.nextInt(limit);
-        }
-        tested[core] = true;
-        return core;
+    private static Simulation buildSimulation(final Options options) {
+        return Simulation.builder()
+                .version(Version.ORIGINAL)
+                .parameter(buildParameter(options))
+                .configuration(buildConfiguration())
+                .demands(new ArrayList<>(options.getDemandsQuantity()))
+                .demandsRejected(new ArrayList<>())
+                .startAt(LocalDateTime.now())
+                .build();
     }
 
-    private Graph createTopology(String fileName, int numberOfCores, double fsWidh, int numberOffs) {
-        ObjectMapper objectMapper = new ObjectMapper();
-        try {
-            Graph<Integer, Link> g = new SimpleWeightedGraph<>(Link.class);
-            InputStream is = ResourceReader.getFileFromResourceAsStream(fileName);
-            JsonNode object = objectMapper.readTree(is);
+    private static Configuration buildConfiguration() {
+        return Configuration.builder()
+                .bitRateDistribution(BITRATE_DISTRIBUTIONO)
+                .build();
+    }
 
-            //se agregan los vertices
-            for (int i = 0; i < object.get("network").size(); i++) {
-                g.addVertex(i);
-            }
-            int vertex = 0;
-            for (JsonNode node : object.get("network")) {
-                for (int i = 0; i < node.get("connections").size(); i++) {
-                    int connection = node.get("connections").get(i).intValue();
-                    int distance = node.get("distance").get(i).intValue();
-                    List<Core> cores = new ArrayList<>();
+    private static Network.Core buildCore(int numberOfCores, double fsWidth, Integer coreFsCapacity) {
+        return Network.Core.builder()
+                .fsWith(fsWidth)
+                .capacity(numberOfCores)
+                .fsList(IntStream.range(0, coreFsCapacity)
+                        .mapToObj(i -> Network.FrequencySlot.builder()
+                                .index(i)
+                                .free(true)
+                                .crosstalk(BigDecimal.ZERO)
+                                .build()).collect(toList()))
+                .build();
+    }
 
-                    for (int j = 0; j < numberOfCores; j++) {
-                        Core core = new Core(fsWidh, numberOffs);
-                        cores.add(core);
-                    }
+    private static Network.Link buildNetworkLink(int vertex, int connection, int distance) {
+        return Network.Link.builder()
+                .from(vertex)
+                .to(connection)
+                .distance(distance)
+                .cores(new ArrayList<>())
+                .build();
+    }
 
-                    Link link = new Link(distance, cores, vertex, connection);
-                    g.addEdge(vertex, connection, link);
-                    g.setEdgeWeight(link, distance);
-                }
-                vertex++;
-            }
-            return g;
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return null;
+    private static Parameter buildParameter(Options options) {
+        return Parameter.builder()
+                .topology(options.getTopology().split("\\.")[0])
+                .fsWidth(Float.valueOf(options.getFsWidth()).doubleValue())
+                .coreCapacity(options.getCapacity())
+                .linkCapacity(options.getCores())
+                .ksp(options.getShortestAlg())
+                .demandsLimit(options.getDemandsQuantity())
+                .sortingStrategy(options.getSortingDemands())
+                .maxCrosstalkDb(options.getMaxCrosstalkDb())
+                .maxCrosstalk(options.getMaxCrosstalk().round(MathContext.DECIMAL128))
+                .unitCrosstalk(valueOf(options.getCrosstalkPerUnitLenght()))
+                .build();
     }
 
     public static void writeResponsesToCSV(Options options, int fsMax) {
@@ -208,6 +239,77 @@ public class SimuladorController {
             System.err.println("Error al escribir en el archivo: " + e.getMessage());
             e.printStackTrace();
         }
+    }
+
+    private void addDemandIntoSimulation(Demand rawDemand) {
+        simulation.addDemand(Simulation.Demand.builder()
+                .index(rawDemand.getId())
+                .source(rawDemand.getSource())
+                .target(rawDemand.getDestination())
+                .bitRate(rawDemand.getBitRate())
+                .distance(rawDemand.getDistance())
+                .kspPaths(new ArrayList<>())
+                .status(Simulation.Demand.DemandStatus.PENDING)
+                .build());
+    }
+
+    private void addKspPathIntoSimulation(GraphPath<Integer, Link> kspPath, int demandId) {
+        simulation.getDemand(demandId)
+                .getKspPaths().add(KspPath.builder()
+                        .distance(Double.valueOf(kspPath.getWeight()).intValue())
+                        .nodes(kspPath.getVertexList())
+                        .cores(new ArrayList<>(simulation.getParameter().getLinkCapacity()))
+                        .status(KspPath.KspPathStatus.PENDING)
+                        .build());
+    }
+
+    private Graph createTopology(String fileName, int numberOfCores, double fsWidh, int numberOffs) {
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            Graph<Integer, Link> g = new SimpleWeightedGraph<>(Link.class);
+            InputStream is = ResourceReader.getFileFromResourceAsStream(fileName);
+            JsonNode object = objectMapper.readTree(is);
+
+            var network = Network.builder()
+                    .nodes(new ArrayList<>())
+                    .links(new ArrayList<>())
+                    .build();
+
+            //se agregan los vertices
+            for (int i = 0; i < object.get("network").size(); i++) {
+                g.addVertex(i);
+                network.getNodes().add(i);
+            }
+            int vertex = 0;
+            for (JsonNode node : object.get("network")) {
+                for (int i = 0; i < node.get("connections").size(); i++) {
+                    int connection = node.get("connections").get(i).intValue();
+                    int distance = node.get("distance").get(i).intValue();
+                    List<Core> cores = new ArrayList<>();
+                    var networkLink = buildNetworkLink(vertex, connection, distance);
+
+                    for (int j = 0; j < numberOfCores; j++) {
+                        Core core = new Core(fsWidh, numberOffs);
+                        cores.add(core);
+                        networkLink.getCores().add(buildCore(numberOfCores, fsWidh,
+                                simulation.getParameter().getCoreCapacity()));
+                    }
+
+                    Link link = new Link(distance, cores, vertex, connection);
+                    g.addEdge(vertex, connection, link);
+                    g.setEdgeWeight(link, distance);
+
+                    network.getLinks().add(networkLink);
+                }
+                vertex++;
+            }
+            simulation.setNetwork(network);
+            return g;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return null;
     }
 
     public void printFSEntryStatus(Graph<Integer, Link> net, int cores, int capacity) {

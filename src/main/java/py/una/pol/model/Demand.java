@@ -1,6 +1,7 @@
 package py.una.pol.model;
 
 public class Demand {
+    private int id;
     private int source;
     private int destination;
     private int bitRate;
@@ -13,6 +14,14 @@ public class Demand {
         this.source = source;
         this.destination = destination;
         this.bitRate = bitRate;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
     }
 
     public int getSource() {

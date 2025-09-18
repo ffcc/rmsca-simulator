@@ -1,8 +1,10 @@
 package py.una.pol.utils;
 import java.math.BigDecimal;
+import java.math.MathContext;
 import java.util.*;
 
 import org.jgrapht.Graph;
+import py.una.pol.domain.Simulation;
 import py.una.pol.model.*;
 
 public class Utils {
@@ -62,22 +64,35 @@ public class Utils {
      * fibra
      * @return Respuesta de la operación
      */
-    public static AssignFsResponse assignFs(Graph<Integer, Link> graph, EstablishedRoute establishedRoute, Double crosstalkPerUnitLength) {
+    public static AssignFsResponse assignFs(Simulation simulation, Graph<Integer, Link> graph,
+                                            EstablishedRoute establishedRoute, Double crosstalkPerUnitLength) {
+        var links = simulation.getNetwork().getLinks();
         for (int j = 0; j < establishedRoute.getPath().size(); j++) {
+            var path = establishedRoute.getPath().get(j);
+            var edge = graph.getEdge(path.getTo(), path.getFrom());
+            var link = links.stream()
+                    .filter(l -> l.getFrom() == path.getFrom() && l.getTo() == path.getTo())
+                    .findFirst().orElseThrow();
+
             for (int i = establishedRoute.getFsIndexBegin(); i < establishedRoute.getFsIndexBegin() + establishedRoute.getFs(); i++) {
-                establishedRoute.getPath().get(j).getCores().get(establishedRoute.getPathCores().get(j)).getFs().get(i).setFree(false); //marca como ocupados los FS del path
                 Integer core = establishedRoute.getPathCores().get(j);
+                path.getCores().get(core).getFs().get(i).setFree(false); //marca como ocupados los FS del path
+                link.getCores().get(core).getFsList().get(i).setFree(false);
                 List<Integer> coreVecinos = getCoreVecinos(core);
                 // TODO: Asignar crosstalk
-                for (Integer coreIndex = 0; coreIndex < establishedRoute.getPath().get(j).getCores().size(); coreIndex++) {
+                for (Integer coreIndex = 0; coreIndex < path.getCores().size(); coreIndex++) {
                     if (!core.equals(coreIndex) && coreVecinos.contains(coreIndex)) {
-                        double crosstalk = XT(getCantidadVecinos(coreIndex), crosstalkPerUnitLength, establishedRoute.getPath().get(j).getDistance());
+                        double crosstalk = XT(getCantidadVecinos(coreIndex), crosstalkPerUnitLength, path.getDistance());
                         BigDecimal crosstalkDB = toDB(crosstalk);
-                        establishedRoute.getPath().get(j).getCores().get(coreIndex).getFs().get(i).setCrosstalk(establishedRoute.getPath().get(j).getCores().get(coreIndex).getFs().get(i).getCrosstalk().add(crosstalkDB));
+                        var fs = path.getCores().get(coreIndex).getFs().get(i);
+                        fs.setCrosstalk(path.getCores().get(coreIndex).getFs().get(i).getCrosstalk().add(crosstalkDB));
 
-                        BigDecimal existingCrosstalk = graph.getEdge(establishedRoute.getPath().get(j).getTo(), establishedRoute.getPath().get(j).getFrom()).getCores().get(coreIndex).getFs().get(i).getCrosstalk();
-                        graph.getEdge(establishedRoute.getPath().get(j).getTo(), establishedRoute.getPath().get(j).getFrom()).getCores().get(coreIndex).getFs().get(i).setCrosstalk(existingCrosstalk.add(crosstalkDB));
-                        //System.out.println("CT despues de suma" + graph.getEdge(establishedRoute.getPath().get(j).getTo(), establishedRoute.getPath().get(j).getFrom()).getCores().get(coreIndex).getFrequencySlots().get(i).getCrosstalk());
+                        var edgeFs = edge.getCores().get(coreIndex).getFs().get(i);
+                        BigDecimal existingCrosstalk = edgeFs.getCrosstalk();
+                        edgeFs.setCrosstalk(existingCrosstalk.add(crosstalkDB));
+                        link.getCores().get(coreIndex).getFsList().get(i).setCrosstalk(
+                                edgeFs.getCrosstalk().round(MathContext.DECIMAL128));
+                        //System.out.println("CT despues de suma" + graph.getEdge(path.getTo(), path.getFrom()).getCores().get(coreIndex).getFrequencySlots().get(i).getCrosstalk());
                     }
                 }
             }
