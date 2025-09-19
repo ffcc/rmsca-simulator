@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
-import org.bson.types.Decimal128;
 import org.jgrapht.Graph;
 import org.jgrapht.GraphPath;
 import org.jgrapht.graph.SimpleWeightedGraph;
@@ -145,7 +144,7 @@ public class SimuladorController {
 
     private static Simulation buildSimulation(final Options options) {
         return Simulation.builder()
-                .version(Version.ORIGINAL)
+                .version(Version.ORIGINAL_FIX)
                 .parameter(buildParameter(options))
                 .configuration(buildConfiguration())
                 .demands(new ArrayList<>(options.getDemandsQuantity()))

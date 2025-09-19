@@ -213,8 +213,8 @@ public class Algorithms {
 
 
     public static double calculateBFRForCore(List<FrequencySlot> frequencySlotList) {
-        double maxFreeBlockSize = 0; // Inicialmente no hay bloques libres
-        double totalFreeSlots = 0; // Inicialmente no hay ranuras libres
+        int maxFreeBlockSize = 0; // Inicialmente no hay bloques libres
+        int totalFSBusy = 0;
 
         int currentFreeBlockSize = 0; // Para rastrear el tamaño del bloque libre actual
 
@@ -222,7 +222,6 @@ public class Algorithms {
             FrequencySlot fs = frequencySlotList.get(i);
             if (fs.isFree()) {
                 // Si la ranura de frecuencia está libre
-                totalFreeSlots++; // Aumentar la cantidad total de ranuras libres
                 currentFreeBlockSize++; // Aumentar el tamaño del bloque libre actual
 
                 // Actualizar la cantidad máxima de bloques libres si es necesario
@@ -230,11 +229,12 @@ public class Algorithms {
             } else {
                 // Si la ranura de frecuencia está ocupada
                 currentFreeBlockSize = 0;
+                totalFSBusy++;
             }
         }
 
         // Calcular el BFR
-        return 1 - maxFreeBlockSize / totalFreeSlots;
+        return 1.0 - (double) maxFreeBlockSize / (frequencySlotList.size() - totalFSBusy);
     }
 
     public static int calculateMSIForCore(List<FrequencySlot> frequencySlotList) {
@@ -266,6 +266,4 @@ public class Algorithms {
             System.out.println();
         }
     }
-
-
 }

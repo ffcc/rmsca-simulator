@@ -31,6 +31,8 @@ public class DemandsGenerator {
             while (true) {
                 // Generar una demanda
                 Demand newDemand = generateSingleDemand(cantNodos);
+                newDemand.setDistance(Double.valueOf(shortestPathFinder.getShortestDistance(
+                        newDemand.getSource(), newDemand.getDestination())).intValue());
 
                 // Validar la demanda
                 if (validateDemand(simulation, newDemand, shortestPathFinder)) {
