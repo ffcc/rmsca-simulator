@@ -79,8 +79,7 @@ public class Utils {
                 path.getCores().get(core).getFs().get(i).setFree(false); //marca como ocupados los FS del path
                 link.getCores().get(core).getFsList().get(i).setFree(false);
                 List<Integer> coreVecinos = getCoreVecinos(core);
-                // TODO: Asignar crosstalk
-                for (Integer coreIndex = 0; coreIndex < path.getCores().size(); coreIndex++) {
+                for (int coreIndex = 0; coreIndex < path.getCores().size(); coreIndex++) {
                     if (!core.equals(coreIndex) && coreVecinos.contains(coreIndex)) {
                         double crosstalk = XT(getCantidadVecinos(coreIndex), crosstalkPerUnitLength, path.getDistance());
                         BigDecimal crosstalkDB = toDB(crosstalk);
@@ -92,7 +91,6 @@ public class Utils {
                         edgeFs.setCrosstalk(existingCrosstalk.add(crosstalkDB));
                         link.getCores().get(coreIndex).getFsList().get(i).setCrosstalk(
                                 edgeFs.getCrosstalk().round(MathContext.DECIMAL128));
-                        //System.out.println("CT despues de suma" + graph.getEdge(path.getTo(), path.getFrom()).getCores().get(coreIndex).getFrequencySlots().get(i).getCrosstalk());
                     }
                 }
             }

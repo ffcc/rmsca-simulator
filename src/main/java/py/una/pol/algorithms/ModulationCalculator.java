@@ -53,7 +53,6 @@ public class ModulationCalculator {
             String modulation = calculateModulation(demand);
 
             // Elegir aleatoriamente un bitrate dentro del rango
-            Random random = new Random();
             int selectedBitrate = demand.getBitRate();
 
             // Cargar el archivo JSON en un DTO
