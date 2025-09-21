@@ -4,14 +4,24 @@ import org.jgrapht.GraphPath;
 import org.jgrapht.graph.DefaultWeightedEdge;
 import py.una.pol.domain.KspPath;
 import py.una.pol.domain.Simulation;
-import py.una.pol.model.*;
+import py.una.pol.model.Demand;
+import py.una.pol.model.EstablishedRoute;
+import py.una.pol.model.FrequencySlot;
+import py.una.pol.model.Link;
 import py.una.pol.utils.DemandsGenerator;
 import py.una.pol.utils.Utils;
 
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import static java.util.Comparator.comparingInt;
 
 public class Algorithms {
+
+    public static final int CENTER_CORE_INDEX = 6;
 
     /*
      * Algoritmo para establecer rutas utilizando RMSCA (Routing, Modulation, Spectrum and Core Assignment) personzalizado.
@@ -35,6 +45,8 @@ public class Algorithms {
         Integer fsIndexBegin = null;
         Integer selectedIndex = null;
         int k = 0;
+        final var orderedCores = createOrderedCores();
+        orderedCores.add(CENTER_CORE_INDEX);
 
         try {
             while (k < shortestPaths.size() && shortestPaths.get(k) != null) {
@@ -63,7 +75,7 @@ public class Algorithms {
                         List<Integer> kspCores = new ArrayList<>();
 
                         for (Link link : ksp.getEdgeList()) {
-                            for (int core = 0; core < cores; core++) {
+                            for (Integer core : orderedCores) {
                                 int endIndex = Math.min(i + demand.getFs(), link.getCores().get(core).getFs().size());
                                 List<FrequencySlot> fsBlock = link.getCores().get(core).getFs().subList(i, endIndex);
 
@@ -74,7 +86,7 @@ public class Algorithms {
                                     kspCores.add(core);
                                     fsIndexBegin = i;
                                     selectedIndex = k;
-                                    core = cores;
+
                                     if (freeLinks.size() == ksp.getEdgeList().size()) {
                                         kspPlaced.add(shortestPaths.get(selectedIndex));
                                         kspPlacedCores.add(kspCores);
@@ -83,6 +95,7 @@ public class Algorithms {
                                         simulationKspPath.setStatus(KspPath.KspPathStatus.CANDIDATE);
                                         simulationKspPath.getCores().addAll(kspCores);
                                     }
+                                    break;
                                 }
                             }
                         }
@@ -194,7 +207,6 @@ public class Algorithms {
         return true;
     }
 
-
     public static double calculateBFRForCore(List<FrequencySlot> frequencySlotList) {
         int maxFreeBlockSize = 0; // Inicialmente no hay bloques libres
         int totalFSBusy = 0;
@@ -248,5 +260,11 @@ public class Algorithms {
             }
             System.out.println();
         }
+    }
+
+    private static List<Integer> createOrderedCores() {
+        return IntStream.range(0, CENTER_CORE_INDEX).boxed().sorted(comparingInt(
+                core -> core % 2))
+                .collect(Collectors.toList());
     }
 }

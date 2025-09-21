@@ -120,12 +120,10 @@ public class SimuladorController {
 
         Map<String, Boolean> map = new LinkedHashMap<>();
         map.put("end", true);
-        System.out.println("Resumen general del simulador");
         System.out.println("Cantidad de demandas: " + demandsQ);
         System.out.println("Cantidad de bloqueos: " + blocksQ);
         System.out.println("FSMAX: " + fsMax);
         System.out.println("Fin Simulación");
-        System.out.println("##################################");
 
         Response response = new Response();
         response.setCantDemandas(demandsQ);
@@ -144,7 +142,7 @@ public class SimuladorController {
 
     private static Simulation buildSimulation(final Options options) {
         return Simulation.builder()
-                .version(Version.ORIGINAL_FIX_MODULATION)
+                .version(Version.ORDERED_CORE_BFR_EVEN_ODD)
                 .parameter(buildParameter(options))
                 .configuration(buildConfiguration())
                 .demands(new ArrayList<>(options.getDemandsQuantity()))
