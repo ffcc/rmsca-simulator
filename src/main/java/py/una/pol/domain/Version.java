@@ -12,6 +12,7 @@ public class Version {
 
     public static final Version ORIGINAL = new Version("1.0.0", "Implementación original");
     public static final Version ORIGINAL_FIX = new Version("1.0.1", "Correcciones a la implementación original");
+    public static final Version ORIGINAL_FIX_CROSSTALK = new Version("1.0.2", "Corrección al cálculo del crosstalk");
     public static final Version ORDERED_CORE_BFR = new Version("1.2.0", "Recorrido de los cores ordenado por BFR");
     public static final Version ORDERED_CORE_BFR_PERIPHERAL = new Version("1.2.1", "Recorrido de los cores con los periféricos ordenado por BFR");
     public static final Version ORDERED_CORE_BFR_EVEN_ODD = new Version("1.2.2", "Recorrido de los cores con los periféricos pares primero");
