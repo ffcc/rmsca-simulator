@@ -1,6 +1,5 @@
 package py.una.pol.algorithms;
 
-import org.jgrapht.Graph;
 import org.jgrapht.GraphPath;
 import org.jgrapht.graph.DefaultWeightedEdge;
 import py.una.pol.domain.KspPath;
@@ -28,7 +27,7 @@ public class Algorithms {
      */
     public static EstablishedRoute findBestRoute(Simulation simulation, Demand demand,
                                                  List<GraphPath<Integer, Link>> shortestPaths, int cores, int capacity,
-                                                 int fsMax, BigDecimal maxCrosstalk, Double crosstalkPerUnitLength) {
+                                                 int fsMax, BigDecimal maxCrosstalk, Double crosstalkIndividual) {
         var simulationKspPaths = simulation.getDemand(demand.getId()).getKspPaths();
         EstablishedRoute establishedRoute = null;
         List<GraphPath<Integer, Link>> kspPlaced = new ArrayList<>();
@@ -61,41 +60,27 @@ public class Algorithms {
                     for (int i = 0; i <= fsMax; i++) {
                         List<Link> freeLinks = new ArrayList<>();
                         List<Integer> kspCores = new ArrayList<>();
-                        List<BigDecimal> crosstalkBlockList = new ArrayList<>();
 
                         for (Link link : ksp.getEdgeList()) {
                             for (int core = 0; core < cores; core++) {
                                 int endIndex = Math.min(i + demand.getFs(), link.getCores().get(core).getFs().size());
                                 List<FrequencySlot> fsBlock = link.getCores().get(core).getFs().subList(i, endIndex);
 
-                                crosstalkBlockList.clear();
-                                for (int fsCrosstalkIndex = 0; fsCrosstalkIndex < fsBlock.size(); fsCrosstalkIndex++) {
-                                    crosstalkBlockList.add(BigDecimal.ZERO);
-                                }
-
-                                if (isFSBlockFree(fsBlock)) {
-                                    if (isFsBlockCrosstalkFree(fsBlock, maxCrosstalk, crosstalkBlockList)) {
-                                        if (isNextToCrosstalkFreeCores(link, maxCrosstalk, core, i, demand.getFs(), crosstalkPerUnitLength)) {
-                                            freeLinks.add(link);
-                                            kspCores.add(core);
-                                            fsIndexBegin = i;
-                                            selectedIndex = k;
-
-                                            for (int crosstalkFsListIndex = 0; crosstalkFsListIndex < crosstalkBlockList.size(); crosstalkFsListIndex++) {
-                                                BigDecimal crosstalkRuta = crosstalkBlockList.get(crosstalkFsListIndex);
-                                                crosstalkRuta = crosstalkRuta.add(Utils.toDB(Utils.XT(Utils.getCantidadVecinos(core), crosstalkPerUnitLength, link.getDistance())));
-                                                crosstalkBlockList.set(crosstalkFsListIndex, crosstalkRuta);
-                                            }
-                                            core = cores;
-                                            if (freeLinks.size() == ksp.getEdgeList().size()) {
-                                                kspPlaced.add(shortestPaths.get(selectedIndex));
-                                                kspPlacedCores.add(kspCores);
-                                                i = capacity;
-                                                foundPath = true;
-                                                simulationKspPath.setStatus(KspPath.KspPathStatus.CANDIDATE);
-                                                simulationKspPath.getCores().addAll(kspCores);
-                                            }
-                                        }
+                                if (isFSBlockFree(fsBlock)
+                                        && isFsBlockCrosstalkFree(link, core, i, fsBlock.size(), crosstalkIndividual, maxCrosstalk)
+                                        && isNeighborFsBlockCrosstalkFree(link, maxCrosstalk, core, i, demand.getFs(), crosstalkIndividual)) {
+                                    freeLinks.add(link);
+                                    kspCores.add(core);
+                                    fsIndexBegin = i;
+                                    selectedIndex = k;
+                                    core = cores;
+                                    if (freeLinks.size() == ksp.getEdgeList().size()) {
+                                        kspPlaced.add(shortestPaths.get(selectedIndex));
+                                        kspPlacedCores.add(kspCores);
+                                        i = capacity;
+                                        foundPath = true;
+                                        simulationKspPath.setStatus(KspPath.KspPathStatus.CANDIDATE);
+                                        simulationKspPath.getCores().addAll(kspCores);
                                     }
                                 }
                             }
@@ -170,17 +155,18 @@ public class Algorithms {
         return true;
     }
 
-    private static Boolean isFsBlockCrosstalkFree(List<FrequencySlot> fss, BigDecimal maxCrosstalk, List<BigDecimal> crosstalkRuta) {
-        for (int i = 0; i < fss.size(); i++) {
-            if (i >= crosstalkRuta.size()) {  // Comprobación de desbordamiento
-                System.out.println("Desbordamiento del índice: i = " + i + ", crosstalkRuta.size() = " + crosstalkRuta.size());
-                continue;  // Saltar a la siguiente iteración
+    private static Boolean isFsBlockCrosstalkFree(Link link, int core, int fsBlockStartIndex, int fsBlockSize,
+                                                  Double crosstalkLinealIndividual,
+                                                  BigDecimal maxCrosstalk) {
+        List<Integer> neighborCores = Utils.getCoreVecinos(core);
+        for (int i = fsBlockStartIndex; i < (fsBlockStartIndex + fsBlockSize); i++) {
+            int neighborCoresActives = 0;
+            for (int neighborCore : neighborCores) {
+                neighborCoresActives += link.getCores().get(neighborCore).getFs().get(i).isFree() ? 0 : 1;
             }
 
-            BigDecimal fsCrosstalk = fss.get(i).getCrosstalk();
-            BigDecimal crosstalkActual = crosstalkRuta.get(i).add(fsCrosstalk);
-
-            if (crosstalkActual.compareTo(maxCrosstalk) > 0) {
+            BigDecimal fsCrosstalkTotal = Utils.toDB(Utils.XT(neighborCoresActives, crosstalkLinealIndividual, link.getDistance()));
+            if (fsCrosstalkTotal.compareTo(maxCrosstalk) > 0) {
                 return false;
             }
         }
@@ -188,20 +174,16 @@ public class Algorithms {
     }
 
 
-    private static Boolean isNextToCrosstalkFreeCores(Link link, BigDecimal maxCrosstalk, Integer core, int fsIndexBegin, int fsWidth, Double crosstalkPerUnitLength) {
-        List<Integer> vecinos = Utils.getCoreVecinos(core);
-        for (Integer coreVecino : vecinos) {
-            List<FrequencySlot> fsVecinoList = link.getCores().get(coreVecino).getFs();
-            for (Integer i = fsIndexBegin; i < fsIndexBegin + fsWidth; i++) {
-                if (i < 0 || i >= fsVecinoList.size()) {  // Comprobación de desbordamiento
-                    System.out.println("Desbordamiento del índice: coreVecino = " + coreVecino + ", i = " + i + ", fsVecinoList.size() = " + fsVecinoList.size());
-                    continue;  // Saltar a la siguiente iteración
-                }
-                FrequencySlot fsVecino = fsVecinoList.get(i);
-                if (!fsVecino.isFree()) {
-                    BigDecimal crosstalkASumar = Utils.toDB(Utils.XT(Utils.getCantidadVecinos(core), crosstalkPerUnitLength, link.getDistance()));
-                    BigDecimal crosstalk = fsVecino.getCrosstalk().add(crosstalkASumar);
-                    //BigDecimal crosstalkDB = Utils.toDB(crosstalk.doubleValue());
+    private static Boolean isNeighborFsBlockCrosstalkFree(Link link, BigDecimal maxCrosstalk, Integer core,
+                                                          int fsIndexBegin, int fsWidth, Double crosstalkIndividual) {
+        List<Integer> neighborCores = Utils.getCoreVecinos(core);
+        for (Integer neighborCore : neighborCores) {
+            List<FrequencySlot> neighborFsList = link.getCores().get(neighborCore).getFs();
+            for (int i = fsIndexBegin; i < fsIndexBegin + fsWidth; i++) {
+                FrequencySlot neighborFs = neighborFsList.get(i);
+                if (!neighborFs.isFree()) {
+                    BigDecimal crosstalkASumar = Utils.toDB(Utils.XT(1, crosstalkIndividual, link.getDistance()));
+                    BigDecimal crosstalk = neighborFs.getCrosstalk().add(crosstalkASumar);
                     if (crosstalk.compareTo(maxCrosstalk) >= 0) {
                         return false;
                     }
