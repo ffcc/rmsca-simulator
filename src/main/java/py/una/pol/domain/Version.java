@@ -17,6 +17,8 @@ public class Version {
             "de la modulación basado en la distancia de cada KSP");
     public static final Version ORDERED_CORE_BFR_PERIPHERAL = new Version("1.2.1", "Recorrido de los cores con los periféricos ordenado por BFR");
     public static final Version ORDERED_CORE_BFR_EVEN_ODD = new Version("1.2.2", "Recorrido de los cores con los periféricos pares primero");
+    public static final Version ORDERED_CORE_BFR_PERIPHERAL_FIX = new Version("1.2.3", "1.0.2 + 1.2.1");
+    public static final Version ORDERED_CORE_BFR_EVEN_ODD_FIX = new Version("1.2.4", "1.0.2 + 1.2.2");
 
     private Version(String value, String description) {
         this.value = value;
