@@ -45,8 +45,9 @@ public class Algorithms {
         List<GraphPath<Integer, Link>> kspPlaced = new ArrayList<>();
         List<List<Integer>> kspPlacedCores = new ArrayList<>();
         Integer fsIndexBegin = null;
-        Integer selectedIndex = null;
+        int selectedIndex;
         int k = 0;
+        final var orderedCores = createOrderedCores();
 
         try {
             while (k < shortestPaths.size() && shortestPaths.get(k) != null) {
@@ -76,7 +77,6 @@ public class Algorithms {
                         List<BigDecimal> crosstalkBlockList = new ArrayList<>();
 
                         for (Link link : ksp.getEdgeList()) {
-                            final var orderedCores = createOrderedCores(link);
                             for (Integer core : orderedCores) {
                                 int endIndex = Math.min(i + demand.getFs(), link.getCores().get(core).getFs().size());
                                 List<FrequencySlot> fsBlock = link.getCores().get(core).getFs().subList(i, endIndex);
@@ -274,9 +274,9 @@ public class Algorithms {
         }
     }
 
-    private static List<Integer> createOrderedCores(Link link) {
-        var orderedCores = IntStream.range(0, CENTER_CORE_INDEX).boxed().sorted(comparingDouble(
-                core -> calculateBFRForCore(link.getCores().get(core).getFs())))
+    private static List<Integer> createOrderedCores() {
+        var orderedCores = IntStream.range(0, CENTER_CORE_INDEX).boxed().sorted(comparingInt(
+                core -> core % 2))
                 .collect(Collectors.toList());
         orderedCores.add(CENTER_CORE_INDEX);
         return orderedCores;
