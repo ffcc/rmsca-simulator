@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static java.util.Comparator.comparingDouble;
 import static java.util.Comparator.comparingInt;
 
 public class Algorithms {
@@ -45,8 +46,6 @@ public class Algorithms {
         Integer fsIndexBegin = null;
         Integer selectedIndex = null;
         int k = 0;
-        final var orderedCores = createOrderedCores();
-        orderedCores.add(CENTER_CORE_INDEX);
 
         try {
             while (k < shortestPaths.size() && shortestPaths.get(k) != null) {
@@ -75,6 +74,7 @@ public class Algorithms {
                         List<Integer> kspCores = new ArrayList<>();
 
                         for (Link link : ksp.getEdgeList()) {
+                            final var orderedCores = createOrderedCores(link);
                             for (Integer core : orderedCores) {
                                 int endIndex = Math.min(i + demand.getFs(), link.getCores().get(core).getFs().size());
                                 List<FrequencySlot> fsBlock = link.getCores().get(core).getFs().subList(i, endIndex);
@@ -262,9 +262,11 @@ public class Algorithms {
         }
     }
 
-    private static List<Integer> createOrderedCores() {
-        return IntStream.range(0, CENTER_CORE_INDEX).boxed().sorted(comparingInt(
-                core -> core % 2))
+    private static List<Integer> createOrderedCores(Link link) {
+        var orderedCores = IntStream.range(0, CENTER_CORE_INDEX).boxed().sorted(comparingDouble(
+                core -> calculateBFRForCore(link.getCores().get(core).getFs())))
                 .collect(Collectors.toList());
+        orderedCores.add(CENTER_CORE_INDEX);
+        return orderedCores;
     }
 }
