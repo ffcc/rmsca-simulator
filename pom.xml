@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>py.una.pol</groupId>
 	<artifactId>static-backend</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>1.0.3</version>
 	<name>static-backend</name>
 	<description>static-backend</description>
 	<properties>
