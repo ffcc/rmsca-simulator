@@ -90,6 +90,7 @@ public class Utils {
                         edgeFs.setCrosstalk(edgeFs.getCrosstalk().add(crosstalkDB));
                         link.getCores().get(neighborCore).getFsList().get(i).setCrosstalk(
                                 edgeFs.getCrosstalk().round(MathContext.DECIMAL128));
+                        //System.out.println("CT despues de suma" + graph.getEdge(path.getTo(), path.getFrom()).getCores().get(coreIndex).getFrequencySlots().get(i).getCrosstalk());
                     }
                 }
                 path.getCores().get(core).getFs().get(i).setCrosstalk(
