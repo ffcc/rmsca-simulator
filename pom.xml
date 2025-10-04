@@ -52,10 +52,11 @@
             <artifactId>opencsv</artifactId>
             <version>5.4</version>
         </dependency>
+
         <dependency>
             <groupId>io.springfox</groupId>
             <artifactId>springfox-boot-starter</artifactId>
-            <version>3.0.0</version> <!-- O la versión más reciente -->
+            <version>3.0.0</version>
         </dependency>
 
 		<dependency>
@@ -63,6 +64,20 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+
+        <dependency>
+            <groupId>de.flapdoodle.embed</groupId>
+            <artifactId>de.flapdoodle.embed.mongo</artifactId>
+            <version>4.21.0</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.19.0</version>
+            <scope>test</scope>
+        </dependency>
 	</dependencies>
 
 	<build>

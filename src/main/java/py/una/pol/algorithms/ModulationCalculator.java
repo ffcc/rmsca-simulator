@@ -21,12 +21,16 @@ public class ModulationCalculator {
     public String calculateModulation(Demand demand) throws IOException {
 
         String surveyFileName = "modulation/survey.json";
-        String jsonStr = new String(ModulationCalculator.class.getClassLoader().getResourceAsStream(surveyFileName).readAllBytes());
+        String jsonStr;
+        try (final var resource = ModulationCalculator.class.getClassLoader().getResourceAsStream(surveyFileName)) {
+            assert resource != null;
+            jsonStr = new String(resource.readAllBytes());
+        }
 
         modulationInfoList = parseJsonToModulationInfoList(jsonStr);
 
         // Ordenar la lista por distancia para realizar búsqueda binaria
-        Collections.sort(modulationInfoList, Comparator.comparingDouble(info -> info.distance));
+        modulationInfoList.sort(Comparator.comparingDouble(info -> info.distance));
 
         // Encontrar la modulación adecuada utilizando búsqueda binaria
         String selectedModulation = null;
@@ -47,18 +51,21 @@ public class ModulationCalculator {
         return selectedModulation;
     }
 
-    public boolean calculateFS(Simulation simulation, Demand demand, KspPath simulationKsp) {
+    public boolean calculateFS(Simulation simulation, Demand demand) {
         try {
             // Obtener la modulación adecuada para la demanda
             String modulation = calculateModulation(demand);
 
             // Elegir aleatoriamente un bitrate dentro del rango
-            Random random = new Random();
             int selectedBitrate = demand.getBitRate();
 
             // Cargar el archivo JSON en un DTO
             String bitrateFileName = "modulation/bitrate.json";
-            String bitrateJsonStr = new String(ModulationCalculator.class.getClassLoader().getResourceAsStream(bitrateFileName).readAllBytes());
+            String bitrateJsonStr;
+            try (final var resource = ModulationCalculator.class.getClassLoader().getResourceAsStream(bitrateFileName)) {
+                assert resource != null;
+                bitrateJsonStr = new String(resource.readAllBytes());
+            }
             ObjectMapper objectMapper = new ObjectMapper();
             BitrateInfoDTO bitrateInfo = objectMapper.readValue(bitrateJsonStr, BitrateInfoDTO.class);
 
@@ -93,10 +100,6 @@ public class ModulationCalculator {
                 // Establecer la modulación y la cantidad de FS en la demanda
                 demand.setModulation(modulation);
                 demand.setFs(fs);
-
-                if (simulationKsp != null) {
-                    simulationKsp.setModulation(modulation);
-                }
 
                 return true;
             } else {

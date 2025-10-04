@@ -144,7 +144,7 @@ public class SimuladorController {
 
     private static Simulation buildSimulation(final Options options) {
         return Simulation.builder()
-                .version(Version.ORIGINAL_FIX_CROSSTALK)
+                .version(Version.ORIGINAL_FIX_MODULATION)
                 .parameter(buildParameter(options))
                 .configuration(buildConfiguration())
                 .demands(new ArrayList<>(options.getDemandsQuantity()))

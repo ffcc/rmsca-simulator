@@ -42,7 +42,8 @@ public class Algorithms {
                 var simulationKspPath = simulationKspPaths.get(k);
 
                 //calcula la modulacion y fs de la demanda mediante k
-                boolean isModulationValid =  DemandsGenerator.calculateValidModulationAndDemandFs(simulation, demand, ksp, simulationKspPath);
+                boolean isModulationValid =  DemandsGenerator.calculateValidModulationAndDemandFs(simulation, demand, ksp);
+                simulationKspPath.setModulation(demand.getModulation());
 
                 // Si la modulación no es válida, pasar al siguiente k
                 if (!isModulationValid) {

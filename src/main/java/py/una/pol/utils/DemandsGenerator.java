@@ -101,7 +101,7 @@ public class DemandsGenerator {
         }
 
         ModulationCalculator modulationCalculator = new ModulationCalculator();
-        boolean fsCalculated = modulationCalculator.calculateFS(simulation, demand, null);
+        boolean fsCalculated = modulationCalculator.calculateFS(simulation, demand);
 
         if (!fsCalculated) {
             return false;
@@ -112,8 +112,7 @@ public class DemandsGenerator {
     }
 
     public static boolean calculateValidModulationAndDemandFs(Simulation simulation, Demand demand,
-                                                              GraphPath<Integer, Link> shortestPath,
-                                                              KspPath simulationKsp) {
+                                                              GraphPath<Integer, Link> shortestPath) {
         // Validar la distancia del camino más corto
         double distance = shortestPath.getWeight();
         if (distance > MAX_DISTANCE_THRESHOLD) {
@@ -122,7 +121,8 @@ public class DemandsGenerator {
         }
 
         ModulationCalculator modulationCalculator = new ModulationCalculator();
-        boolean fsCalculated = modulationCalculator.calculateFS(simulation, demand, simulationKsp);
+        demand.setDistance(Double.valueOf(distance).intValue());
+        boolean fsCalculated = modulationCalculator.calculateFS(simulation, demand);
 
         if (!fsCalculated) {
             return false;
