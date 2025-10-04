@@ -142,7 +142,7 @@ public class SimuladorController {
 
     private static Simulation buildSimulation(final Options options) {
         return Simulation.builder()
-                .version(Version.ORDERED_CORE_BFR_EVEN_ODD_FIX)
+                .version(Version.ORDERED_CORE_BFR_EVEN_ODD_WITH_FIX)
                 .parameter(buildParameter(options))
                 .configuration(buildConfiguration())
                 .demands(new ArrayList<>(options.getDemandsQuantity()))

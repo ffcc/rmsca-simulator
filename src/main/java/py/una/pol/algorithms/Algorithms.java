@@ -39,7 +39,7 @@ public class Algorithms {
      */
     public static EstablishedRoute findBestRoute(Simulation simulation, Demand demand,
                                                  List<GraphPath<Integer, Link>> shortestPaths, int cores, int capacity,
-                                                 int fsMax, BigDecimal maxCrosstalk, Double crosstalkPerUnitLength) {
+                                                 int fsMax, BigDecimal maxCrosstalk, Double crosstalkIndividual) {
         var simulationKspPaths = simulation.getDemand(demand.getId()).getKspPaths();
         EstablishedRoute establishedRoute = null;
         List<GraphPath<Integer, Link>> kspPlaced = new ArrayList<>();
@@ -96,7 +96,7 @@ public class Algorithms {
 
                                     for (int crosstalkFsListIndex = 0; crosstalkFsListIndex < crosstalkBlockList.size(); crosstalkFsListIndex++) {
                                         BigDecimal crosstalkRuta = crosstalkBlockList.get(crosstalkFsListIndex);
-                                        crosstalkRuta = crosstalkRuta.add(Utils.toDB(Utils.XT(Utils.getCantidadVecinos(core), crosstalkPerUnitLength, link.getDistance())));
+                                        crosstalkRuta = crosstalkRuta.add(Utils.toDB(Utils.XT(Utils.getCantidadVecinos(core), crosstalkIndividual, link.getDistance())));
                                         crosstalkBlockList.set(crosstalkFsListIndex, crosstalkRuta);
                                     }
                                     if (freeLinks.size() == ksp.getEdgeList().size()) {
