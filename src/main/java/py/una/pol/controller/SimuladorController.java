@@ -193,6 +193,7 @@ public class SimuladorController {
                 .maxCrosstalkDb(options.getMaxCrosstalkDb())
                 .maxCrosstalk(options.getMaxCrosstalk().round(MathContext.DECIMAL128))
                 .unitCrosstalk(valueOf(options.getCrosstalkPerUnitLenght()))
+                .unitCrosstalkName(options.getCrosstalkPerUnitLengthName())
                 .build();
     }
 

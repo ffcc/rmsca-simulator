@@ -34,4 +34,6 @@ public class Parameter {
 
     @Field(targetType = FieldType.DECIMAL128)
     private BigDecimal unitCrosstalk;
+
+    private String unitCrosstalkName;
 }

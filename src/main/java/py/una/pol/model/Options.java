@@ -32,4 +32,6 @@ public class Options {
     private BigDecimal maxCrosstalk;
 
     private Double crosstalkPerUnitLenght;
+
+    private String crosstalkPerUnitLengthName;
 }
