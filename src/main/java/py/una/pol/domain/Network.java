@@ -60,6 +60,7 @@ public class Network {
         private Boolean free;
 
         @Field(targetType = FieldType.DECIMAL128)
-        private BigDecimal crosstalk;
+        @Builder.Default
+        private BigDecimal crosstalk = BigDecimal.ZERO;
     }
 }

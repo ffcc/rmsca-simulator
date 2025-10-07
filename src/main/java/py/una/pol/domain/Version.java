@@ -8,17 +8,15 @@ public class Version {
 
     private final String value;
 
-    private final String name;
-
     private final String description;
 
-    public static final Version ORIGINAL = new Version("1.0.0", "ORI00", "Implementación original");
-    public static final Version ORIGINAL_FIX = new Version("1.0.1", "ORI01", "Correcciones a la implementación original");
-    public static final Version ORIGINAL_FIX_CROSSTALK = new Version("1.0.2", "ORI02", "Corrección al cálculo del crosstalk");
+    /* 1.0.X */
+    public static final Version ORIGINAL = new Version("1.0.0", "Implementación original");
+    public static final Version ORIGINAL_FIX = new Version("1.0.1", "Correcciones a la implementación original");
+    public static final Version ORIGINAL_FIX_CROSSTALK = new Version("1.0.2", "Corrección al cálculo del crosstalk");
 
-    private Version(String value, String name, String description) {
+    private Version(String value, String description) {
         this.value = value;
-        this.name = name;
         this.description = description;
     }
 }

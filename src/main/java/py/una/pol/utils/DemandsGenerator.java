@@ -110,26 +110,4 @@ public class DemandsGenerator {
         // Si pasa todas las validaciones, la demanda es aceptada
         return true;
     }
-
-    public static boolean calculateValidModulationAndDemandFs(Simulation simulation, Demand demand,
-                                                              GraphPath<Integer, Link> shortestPath,
-                                                              KspPath simulationKsp) {
-        // Validar la distancia del camino más corto
-        double distance = shortestPath.getWeight();
-        if (distance > MAX_DISTANCE_THRESHOLD) {
-            System.out.println("La distancia entre nodos es demasiado grande, demanda rechazada.");
-            return false;
-        }
-
-        ModulationCalculator modulationCalculator = new ModulationCalculator();
-        boolean fsCalculated = modulationCalculator.calculateFS(simulation, demand, simulationKsp);
-
-        if (!fsCalculated) {
-            return false;
-        }
-
-        // Si pasa todas las validaciones, la demanda es aceptada
-        return true;
-    }
-
 }

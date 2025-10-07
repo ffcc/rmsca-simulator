@@ -1,11 +1,13 @@
 package py.una.pol.model;
 
-public class ModulationInfo {
-    public String modulation;
-    public double distance;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
-    public ModulationInfo(String modulation, int distance) {
-        this.modulation = modulation;
-        this.distance = distance;
-    }
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
+public class ModulationInfo {
+    private String modulation;
+    private double distance;
 }
