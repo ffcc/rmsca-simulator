@@ -110,7 +110,9 @@ public class Algorithms {
                     }
                 }
 
-                fsMax++;
+                if (!foundPath) {
+                    fsMax++;
+                }
             }
 
             k++;

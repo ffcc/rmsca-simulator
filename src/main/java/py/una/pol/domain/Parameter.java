@@ -36,4 +36,6 @@ public class Parameter {
     private BigDecimal unitCrosstalk;
 
     private String unitCrosstalkName;
+
+    private int fsMaxInit = 0;
 }

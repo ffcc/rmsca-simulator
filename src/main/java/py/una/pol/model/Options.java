@@ -34,4 +34,6 @@ public class Options {
     private Double crosstalkPerUnitLenght;
 
     private String crosstalkPerUnitLengthName;
+
+    private int fsMaxInit = 0;
 }

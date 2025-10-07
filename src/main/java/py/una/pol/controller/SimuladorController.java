@@ -142,7 +142,7 @@ public class SimuladorController {
 
     private static Simulation buildSimulation(final Options options) {
         return Simulation.builder()
-                .version(Version.ORIGINAL_FIX_ACCUMULATED_CROSSTALK)
+                .version(Version.INIT_FS_MAX_GREATER_THAN_ZERO)
                 .parameter(buildParameter(options))
                 .configuration(buildConfiguration())
                 .demands(new ArrayList<>(options.getDemandsQuantity()))
@@ -192,6 +192,7 @@ public class SimuladorController {
                 .maxCrosstalk(options.getMaxCrosstalk().round(MathContext.DECIMAL128))
                 .unitCrosstalk(valueOf(options.getCrosstalkPerUnitLenght()))
                 .unitCrosstalkName(options.getCrosstalkPerUnitLengthName())
+                .fsMaxInit(options.getFsMaxInit())
                 .build();
     }
 
