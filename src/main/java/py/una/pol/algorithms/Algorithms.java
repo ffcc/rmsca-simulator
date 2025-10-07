@@ -19,6 +19,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.IntStream;
+
+import static java.util.Comparator.comparingInt;
 
 public class Algorithms {
 
@@ -45,6 +48,7 @@ public class Algorithms {
         int k = 0;
         var modulationCalculator = new ModulationCalculator();
         EstablishedRoute establishedRoute = null;
+        var orderedCores = createOrderedCoresByOddEven(cores);
 
         while (k < shortestPaths.size() && shortestPaths.get(k) != null) {
             GraphPath<Integer, Link> ksp = shortestPaths.get(k);
@@ -74,7 +78,7 @@ public class Algorithms {
                     Map<Integer, BigDecimal> accumulatedCrosstalk = new HashMap<>();
 
                     for (Link link : ksp.getEdgeList()) {
-                        for (int core = 0; core < cores; core++) {
+                        for (int core : orderedCores) {
                             List<FrequencySlot> fsBlock = link.getCores().get(core).getFs().subList(i, i + fsRequired);
 
                             if (isFSBlockFree(fsBlock)
@@ -248,6 +252,16 @@ public class Algorithms {
         }
 
         return maxOccupiedSlotIndex;
+    }
+
+    private static List<Integer> createOrderedCoresByOddEven(int coreLimit) {
+        var centerCore = coreLimit - 1;
+        var cores = new ArrayList<>(IntStream
+                .range(0, centerCore).boxed()
+                .sorted(comparingInt(core -> core % 2))
+                .toList());
+        cores.add(centerCore);
+        return cores;
     }
 
     // Método para imprimir los caminos en kspPlaced
