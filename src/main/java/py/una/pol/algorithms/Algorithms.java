@@ -19,6 +19,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.IntStream;
+
+import static java.util.Comparator.comparingDouble;
 
 public class Algorithms {
 
@@ -74,7 +77,8 @@ public class Algorithms {
                     Map<Integer, BigDecimal> accumulatedCrosstalk = new HashMap<>();
 
                     for (Link link : ksp.getEdgeList()) {
-                        for (int core = 0; core < cores; core++) {
+                        var orderedCores = createOrderedCoresByBFR(link, cores);
+                        for (int core : orderedCores) {
                             List<FrequencySlot> fsBlock = link.getCores().get(core).getFs().subList(i, i + fsRequired);
 
                             if (isFSBlockFree(fsBlock)
@@ -248,6 +252,16 @@ public class Algorithms {
         }
 
         return maxOccupiedSlotIndex;
+    }
+
+    private static List<Integer> createOrderedCoresByBFR(Link link, int coreLimit) {
+        var centerCore = coreLimit - 1;
+        var cores = new ArrayList<>(IntStream
+                .range(0, centerCore).boxed()
+                .sorted(comparingDouble(core -> calculateBFRForCore(link.getCores().get(core).getFs())))
+                .toList());
+        cores.add(centerCore);
+        return cores;
     }
 
     // Método para imprimir los caminos en kspPlaced
