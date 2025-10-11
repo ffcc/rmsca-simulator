@@ -111,25 +111,23 @@ public class SimuladorController {
                 break;
             } else {
                 establishedRoutes.add(establishedRoute);
-                Utils.assignFs(simulation, net, establishedRoute, options.getCrosstalkPerUnitLenght());
+                Utils.assignFs(net, establishedRoute, options.getCrosstalkPerUnitLenght());
 
                 fsMax = Math.max(fsMax, establishedRoute.getFsMax());
                 simulation.getDemand(demand.getId()).setStatus(Simulation.Demand.DemandStatus.ACTIVE);
             }
         }
 
-        Map<String, Boolean> map = new LinkedHashMap<>();
-        map.put("end", true);
-        System.out.println("Resumen general del simulador");
         System.out.println("Cantidad de demandas: " + demandsQ);
         System.out.println("Cantidad de bloqueos: " + blocksQ);
         System.out.println("FSMAX: " + fsMax);
-        System.out.println("Fin Simulación");
-        System.out.println("##################################");
+        System.out.println("Fin simulación!");
 
-        Response response = new Response();
-        response.setCantDemandas(demandsQ);
-        response.setFsMax(fsMax);
+        Response response = Response.builder()
+                .cantDemandas(demandsQ)
+                .cantBloqueos(blocksQ)
+                .fsMax(fsMax)
+                .build();
 
         var result = Result.builder()
                 .maxFs(fsMax)
@@ -144,7 +142,7 @@ public class SimuladorController {
 
     private static Simulation buildSimulation(final Options options) {
         return Simulation.builder()
-                .version(Version.ORIGINAL_FIX_CROSSTALK)
+                .version(Version.ORIGINAL_FIX_ACCUMULATED_CROSSTALK)
                 .parameter(buildParameter(options))
                 .configuration(buildConfiguration())
                 .demands(new ArrayList<>(options.getDemandsQuantity()))

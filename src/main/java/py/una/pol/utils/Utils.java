@@ -1,13 +1,16 @@
 package py.una.pol.utils;
-import java.math.BigDecimal;
-import java.math.MathContext;
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import org.jgrapht.Graph;
 import py.una.pol.domain.Simulation;
-import py.una.pol.model.*;
+import py.una.pol.model.AssignFsResponse;
+import py.una.pol.model.EstablishedRoute;
+import py.una.pol.model.Link;
+
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class Utils {
 
@@ -65,61 +68,56 @@ public class Utils {
      * @param crosstalkPerUnitLength Crosstalk por unidad de distancia de la
      *                               fibra
      */
-    public static void assignFs(Simulation simulation, Graph<Integer, Link> graph,
-                                EstablishedRoute establishedRoute, Double crosstalkPerUnitLength) {
-        var links = simulation.getNetwork().getLinks();
-        List<BigDecimal> accumulatedCrosstalk = new ArrayList<>(IntStream
-                .range(0, establishedRoute.getFs())
-                .mapToObj(i -> BigDecimal.ZERO)
-                .toList());
+    public static void assignFs(Graph<Integer, Link> graph, EstablishedRoute establishedRoute,
+                                Double crosstalkPerUnitLength) {
         var fsIndexBegin = establishedRoute.getFsIndexBegin();
+        Map<Integer, BigDecimal> accumulatedCrosstalk = new HashMap<>();
         /* Actualización del crosstalk almacenado en los core vecinos y acumulación del crosstalk */
         for (int j = 0; j < establishedRoute.getPath().size(); j++) {
             var path = establishedRoute.getPath().get(j);
             var edge = graph.getEdge(path.getTo(), path.getFrom());
-            var link = links.stream()
-                    .filter(l -> l.getFrom() == path.getFrom() && l.getTo() == path.getTo())
-                    .findFirst().orElseThrow();
+            /* Se calcula la interferencia del enlace asignado */
+            var crosstalkDB = toDB(XT(1, crosstalkPerUnitLength, path.getDistance()));
 
-            for (int i = fsIndexBegin, xtIndex = 0; i < fsIndexBegin + establishedRoute.getFs(); i++, xtIndex++) {
-                Integer core = establishedRoute.getPathCores().get(j);
+            for (int i = fsIndexBegin; i < fsIndexBegin + establishedRoute.getFs(); i++) {
+                var core = establishedRoute.getPathCores().get(j);
+                var assignedFs = path.getCores().get(core).getFs().get(i);
+                var edgeAssignedFs = edge.getCores().get(core).getFs().get(i);
+
                 /* Marca como ocupado el FS del core escogido */
-                path.getCores().get(core).getFs().get(i).setFree(false); //marca como ocupados los FS del path
-                link.getCores().get(core).getFsList().get(i).setFree(false);
+                assignedFs.setFree(false);
+
                 /* Actualiza el crosstalk acumulado en los FS de los core vecinos ocupados */
                 var neighborCoresActives = 0;
                 List<Integer> coreVecinos = getCoreVecinos(core);
                 for (int neighborCore : coreVecinos) {
                     var fs = path.getCores().get(neighborCore).getFs().get(i);
                     if (!fs.isFree()) {
+                        /* Se aumenta el número de vecinos activos para el FS en el enlace */
                         neighborCoresActives++;
-                        BigDecimal crosstalkDB = toDB(XT(1, crosstalkPerUnitLength, path.getDistance()));
-                        fs.setCrosstalk(path.getCores().get(neighborCore).getFs().get(i).getCrosstalk().add(crosstalkDB));
 
+                        /* Se actualiza el crosstalk directo en el FS vecino activo */
+                        fs.setCrosstalk(fs.getCrosstalk().add(crosstalkDB));
+
+                        /* Se actualiza el crosstalk acumulado en el FS vecino activo */
+                        fs.accumulateCrosstalk(i, crosstalkDB);
+
+                        /* Se actualiza el crosstalk en el grafo */
                         var edgeFs = edge.getCores().get(neighborCore).getFs().get(i);
-                        edgeFs.setCrosstalk(edgeFs.getCrosstalk().add(crosstalkDB));
-                        link.getCores().get(neighborCore).getFsList().get(i).setCrosstalk(
-                                edgeFs.getCrosstalk().round(MathContext.DECIMAL128));
+                        edgeFs.setCrosstalk(fs.getCrosstalk());
+                        edgeFs.setAccumulatedCrosstalk(fs.getAccumulatedCrosstalk());
                     }
                 }
-                /* Actualiza el crosstalk acumulado */
+                /* Se calcula el crosstalk en el FS asignado según la cantidad de vecinos activos */
                 var fsCrosstalk = toDB(XT(neighborCoresActives, crosstalkPerUnitLength, path.getDistance()));
-                accumulatedCrosstalk.set(xtIndex, accumulatedCrosstalk.get(xtIndex).add(fsCrosstalk));
-            }
-        }
-        /* Almacena el crosstalk acumulado en los FS */
-        for (int j = 0; j < establishedRoute.getPath().size(); j++) {
-            var path = establishedRoute.getPath().get(j);
-            var edge = graph.getEdge(path.getTo(), path.getFrom());
-            var link = links.stream()
-                    .filter(l -> l.getFrom() == path.getFrom() && l.getTo() == path.getTo())
-                    .findFirst().orElseThrow();
-            var core = establishedRoute.getPathCores().get(j);
-            for (int i = fsIndexBegin, xtIndex = 0; i < fsIndexBegin + establishedRoute.getFs(); i++, xtIndex++) {
-                var xtAcumulado = accumulatedCrosstalk.get(xtIndex);
-                path.getCores().get(core).getFs().get(i).setCrosstalk(xtAcumulado);
-                edge.getCores().get(core).getFs().get(i).setCrosstalk(xtAcumulado);
-                link.getCores().get(core).getFsList().get(i).setCrosstalk(xtAcumulado.round(MathContext.DECIMAL128));
+
+                /* Se actualiza el crosstalk directo en el FS asignado */
+                assignedFs.setCrosstalk(fsCrosstalk);
+
+                /* Actualiza el crosstalk acumulado en la demanda para el índice del bloque de FS */
+                accumulatedCrosstalk.put(i, accumulatedCrosstalk.getOrDefault(i, BigDecimal.ZERO).add(fsCrosstalk));
+                assignedFs.setAccumulatedCrosstalk(accumulatedCrosstalk);
+                edgeAssignedFs.setAccumulatedCrosstalk(accumulatedCrosstalk);
             }
         }
     }
@@ -176,7 +174,7 @@ public class Utils {
     }
 
     public static AssignFsResponse assignFsv1(Simulation simulation, Graph<Integer, Link> graph,
-                                            EstablishedRoute establishedRoute, Double crosstalkPerUnitLength) {
+                                              EstablishedRoute establishedRoute, Double crosstalkPerUnitLength) {
         /* Se recorre cada enlace del camino escogido */
         for (int j = 0; j < establishedRoute.getPath().size(); j++) {
 

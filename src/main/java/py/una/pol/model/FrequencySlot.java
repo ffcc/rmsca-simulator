@@ -1,39 +1,26 @@
 package py.una.pol.model;
 
-import java.math.BigDecimal;
+import lombok.Getter;
+import lombok.Setter;
 
+import java.math.BigDecimal;
+import java.util.Map;
+
+@Getter
+@Setter
 public class FrequencySlot {
     private boolean free;
-    private double fsWidh;
+    private double fsWidth;
     private BigDecimal crosstalk;
+    private Map<Integer, BigDecimal> accumulatedCrosstalk;
 
-    public FrequencySlot(double fsWidh) {
-        this.fsWidh = fsWidh;
+    public FrequencySlot(double fsWidth) {
+        this.fsWidth = fsWidth;
         this.free = true;
         this.crosstalk = BigDecimal.ZERO;
     }
 
-    public boolean isFree() {
-        return free;
-    }
-
-    public void setFree(boolean free) {
-        this.free = free;
-    }
-
-    public double getFsWidh() {
-        return fsWidh;
-    }
-
-    public void setFsWidh(double fsWidh) {
-        this.fsWidh = fsWidh;
-    }
-
-    public BigDecimal getCrosstalk() {
-        return crosstalk;
-    }
-
-    public void setCrosstalk(BigDecimal crosstalk) {
-        this.crosstalk = crosstalk;
+    public void accumulateCrosstalk(int fsIndex, BigDecimal crosstalk) {
+        accumulatedCrosstalk.put(fsIndex, accumulatedCrosstalk.get(fsIndex).add(crosstalk));
     }
 }

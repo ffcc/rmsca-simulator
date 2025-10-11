@@ -1,8 +1,13 @@
 package py.una.pol.model;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import java.util.ArrayList;
 import java.util.List;
 
+@Getter
+@Setter
 public class Core {
     private double bandwidth;
     private List<FrequencySlot> fs;
@@ -14,34 +19,5 @@ public class Core {
         for (int i = 0; i < fs; i++){
             this.fs.add(new FrequencySlot(bandwidth/fs));
         }
-    }
-
-    public Core(double bandwidth, List<FrequencySlot> fs) {
-        this.bandwidth = bandwidth;
-        this.fs = fs;
-    }
-
-    public double getBandwidth() {
-        return bandwidth;
-    }
-
-    public void setBandwidth(double bandwidth) {
-        this.bandwidth = bandwidth;
-    }
-
-    public List<FrequencySlot> getFs() {
-        return fs;
-    }
-
-    public void setFs(List<FrequencySlot> fs) {
-        this.fs = fs;
-    }
-
-    public double getBfr() {
-        return bfr;
-    }
-
-    public void setBfr(double bfr) {
-        this.bfr = bfr;
     }
 }

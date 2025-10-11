@@ -1,23 +1,13 @@
 package py.una.pol.model;
 
 
+import lombok.Builder;
+import lombok.Getter;
+
+@Builder
+@Getter
 public class Response {
     private int cantDemandas;
+    private int cantBloqueos;
     private int fsMax;
-
-    public int getCantDemandas() {
-        return cantDemandas;
-    }
-
-    public void setCantDemandas(int cantDemandas) {
-        this.cantDemandas = cantDemandas;
-    }
-
-    public int getFsMax() {
-        return fsMax;
-    }
-
-    public void setFsMax(int fsMax) {
-        this.fsMax = fsMax;
-    }
 }

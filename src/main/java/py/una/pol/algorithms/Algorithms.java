@@ -7,13 +7,18 @@ import py.una.pol.domain.Modulation;
 import py.una.pol.domain.Simulation;
 import py.una.pol.exception.ModulationNotFoundException;
 import py.una.pol.exception.ModulationNotSupportedException;
-import py.una.pol.model.*;
-import py.una.pol.utils.DemandsGenerator;
+import py.una.pol.model.Core;
+import py.una.pol.model.Demand;
+import py.una.pol.model.EstablishedRoute;
+import py.una.pol.model.FrequencySlot;
+import py.una.pol.model.Link;
 import py.una.pol.utils.Utils;
 
 import java.math.BigDecimal;
-import java.util.*;
-import java.util.stream.IntStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class Algorithms {
 
@@ -35,7 +40,7 @@ public class Algorithms {
         var simulationKspPaths = simulation.getDemand(demand.getId()).getKspPaths();
         List<GraphPath<Integer, Link>> kspPlaced = new ArrayList<>();
         List<List<Integer>> kspPlacedCores = new ArrayList<>();
-        Integer fsIndexBegin = null;
+        List<Integer> kspFsBeginIndex = new ArrayList<>();
         int selectedIndex;
         int k = 0;
         var modulationCalculator = new ModulationCalculator();
@@ -48,7 +53,7 @@ public class Algorithms {
             //calcula la modulacion y fs de la demanda mediante k
             int fsRequired;
             try {
-                Modulation modulation =  modulationCalculator
+                Modulation modulation = modulationCalculator
                         .calculateModulation(demand.getBitRate(), (int) ksp.getWeight());
                 fsRequired = modulation.getFsRequired();
                 simulationKspPath.setModulation(modulation.getName());
@@ -66,10 +71,7 @@ public class Algorithms {
                 for (int i = 0; i <= fsMax; i++) {
                     int freeLinks = 0;
                     List<Integer> kspCores = new ArrayList<>();
-                    List<BigDecimal> accumulatedCrosstalk = new ArrayList<>(IntStream
-                            .range(0, fsRequired)
-                            .mapToObj(ia -> BigDecimal.ZERO)
-                            .toList());
+                    Map<Integer, BigDecimal> accumulatedCrosstalk = new HashMap<>();
 
                     for (Link link : ksp.getEdgeList()) {
                         for (int core = 0; core < cores; core++) {
@@ -81,22 +83,22 @@ public class Algorithms {
                                 /* Actualiza los datos encontrados */
                                 freeLinks++;
                                 kspCores.add(core);
-                                fsIndexBegin = i;
                                 selectedIndex = k;
 
                                 /* Actualiza el crosstalk acumulado */
-                                for (int j = 0, fsBlockIndex = i; j < accumulatedCrosstalk.size(); j++, fsBlockIndex++) {
-                                    BigDecimal crosstalkRuta = accumulatedCrosstalk.get(j);
-                                    int neighborCoresActives = countActiveNeighbors(link.getCores(), core, fsBlockIndex);
+                                for (int fsIndex = i; fsIndex < i + fsRequired; fsIndex++) {
+                                    BigDecimal crosstalkRuta = accumulatedCrosstalk.getOrDefault(fsIndex, BigDecimal.ZERO);
+                                    int neighborCoresActives = countActiveNeighbors(link.getCores(), core, fsIndex);
                                     crosstalkRuta = crosstalkRuta.add(Utils.toDB(Utils.XT(neighborCoresActives,
                                             crosstalkIndividual, link.getDistance())));
-                                    accumulatedCrosstalk.set(j, crosstalkRuta);
+                                    accumulatedCrosstalk.put(fsIndex, crosstalkRuta);
                                 }
 
                                 /* En caso de llegar al último enlace se salva el ksp como candidato */
                                 if (freeLinks == ksp.getEdgeList().size()) {
                                     kspPlaced.add(shortestPaths.get(selectedIndex));
                                     kspPlacedCores.add(kspCores);
+                                    kspFsBeginIndex.add(i);
                                     i = capacity;
                                     foundPath = true;
                                     simulationKspPath.setStatus(KspPath.KspPathStatus.CANDIDATE);
@@ -114,7 +116,7 @@ public class Algorithms {
             k++;
         }
 
-        if (fsIndexBegin != null && !kspPlaced.isEmpty()) {
+        if (!kspFsBeginIndex.isEmpty() && !kspPlaced.isEmpty()) {
             double bestBFR = Double.MAX_VALUE;
             int bestMSI = Integer.MAX_VALUE;
             int bestPathIndex = -1;
@@ -149,7 +151,7 @@ public class Algorithms {
             if (bestPathIndex != -1) {
                 simulationKspPaths.get(bestPathIndex).setStatus(KspPath.KspPathStatus.ESTABLISHED);
                 establishedRoute = new EstablishedRoute(kspPlaced.get(bestPathIndex).getEdgeList(),
-                        fsIndexBegin, demand.getFs(), demand.getSource(), demand.getDestination(),
+                        kspFsBeginIndex.get(bestPathIndex), demand.getFs(), demand.getSource(), demand.getDestination(),
                         kspPlacedCores.get(bestPathIndex), fsMax, bestBFR, bestMSI);
             }
         }
@@ -168,12 +170,12 @@ public class Algorithms {
 
     private static Boolean isFsBlockCrosstalkFree(Link link, int core, int fsBlockStartIndex, int fsBlockSize,
                                                   Double crosstalkLinealIndividual, BigDecimal maxCrosstalk,
-                                                  List<BigDecimal> accumulatedCrosstalk) {
-        for (int i = fsBlockStartIndex, j = 0; i < (fsBlockStartIndex + fsBlockSize); i++, j++) {
+                                                  Map<Integer, BigDecimal> accumulatedCrosstalk) {
+        for (int i = fsBlockStartIndex; i < (fsBlockStartIndex + fsBlockSize); i++) {
             int neighborCoresActives = countActiveNeighbors(link.getCores(), core, i);
 
             BigDecimal fsCrosstalkTotal = Utils.toDB(Utils.XT(neighborCoresActives, crosstalkLinealIndividual, link.getDistance()));
-            BigDecimal fsAccumulatedCrosstalk = accumulatedCrosstalk.get(j).add(fsCrosstalkTotal);
+            BigDecimal fsAccumulatedCrosstalk = accumulatedCrosstalk.getOrDefault(i, BigDecimal.ZERO).add(fsCrosstalkTotal);
             if (fsAccumulatedCrosstalk.compareTo(maxCrosstalk) > 0) {
                 return false;
             }
@@ -190,7 +192,7 @@ public class Algorithms {
                 FrequencySlot neighborFs = neighborFsList.get(i);
                 if (!neighborFs.isFree()) {
                     BigDecimal crosstalkASumar = Utils.toDB(Utils.XT(1, crosstalkIndividual, link.getDistance()));
-                    BigDecimal crosstalk = neighborFs.getCrosstalk().add(crosstalkASumar);
+                    BigDecimal crosstalk = neighborFs.getAccumulatedCrosstalk().get(i).add(crosstalkASumar);
                     if (crosstalk.compareTo(maxCrosstalk) >= 0) {
                         return false;
                     }
